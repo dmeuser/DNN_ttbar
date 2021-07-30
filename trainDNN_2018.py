@@ -28,6 +28,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler,StandardScaler
 from sklearn.utils.class_weight import compute_class_weight,compute_sample_weight
 import shap
+import seaborn as sns
+
     
 def bJetRegression_Model():
     model = Sequential()
@@ -421,6 +423,17 @@ def plot_Output(dataPath,inputVars,modelPath,treeName,target,patchedTrain=True,u
     ax.axline((1, 1), slope=1)
     plt.savefig("outputComparison/"+modelPath.split("/")[1]+"/2D_Target_GenMET.pdf")
     
+    # Compare mean diff as a function of genMET
+    train_x["genMET-PuppiMET"]=train_x["genMET"]-train_x["PuppiMET"]
+    train_x["genMET-DNN_MET"]=train_x["genMET"]-train_x["DNN_MET"]
+    min=train_x["genMET"].min()
+    max=train_x["genMET"].max()
+    plt.figure()
+    sns.regplot(x=train_x["genMET"],y=train_x["genMET-DNN_MET"],x_bins=np.arange(0,500,10),fit_reg=False,marker=".",label="genMET-DNN")
+    sns.regplot(x=train_x["genMET"],y=train_x["genMET-PuppiMET"],x_bins=np.arange(0,500,10),fit_reg=False,color="r",marker=".",label="genMET-PuppiMET")
+    plt.legend()
+    plt.savefig("outputComparison/"+modelPath.split("/")[1]+"/MeanDiff_vs_genMET.pdf")
+    
     
 #############################################################
 
@@ -458,31 +471,31 @@ if __name__ == "__main__":
     #  ~trainKeras(dataPath,inputVars,"InlusivePatched_amcatnlo_sqrt_20Bins","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False,genMETweighted=True,updateInput=True)
     #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False,updateInput=False)
     
-    #  ~shapleyValues(dataPath,inputVars,"trainedModel_Keras/InlusivePatched_amcatnlo__PuppiMET-genMET_2018_20210427-1104","TTbar_amcatnlo","PuppiMET-genMET")
-    #  ~shapleyValues(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo__PuppiMET-genMET_2018_20210427-1222normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
-    #  ~shapleyValues(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo__PtNuNu_2018_20210429-1832normDistr","TTbar_amcatnlo","PtNuNu",patchedTrain=False)
-    #  ~shapleyValues(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_FristBatchNorm_removeNonNeg_30EP_emu__PuppiMET-genMET_2018_20210504-1416normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
+    #  ~shapleyValues(dataPath,inputVars,"trainedModel_Keras/2018/InlusivePatched_amcatnlo__PuppiMET-genMET_2018_20210427-1104","TTbar_amcatnlo","PuppiMET-genMET")
+    #  ~shapleyValues(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo__PuppiMET-genMET_2018_20210427-1222normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
+    #  ~shapleyValues(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo__PtNuNu_2018_20210429-1832normDistr","TTbar_amcatnlo","PtNuNu",patchedTrain=False)
+    #  ~shapleyValues(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_FristBatchNorm_removeNonNeg_30EP_emu__PuppiMET-genMET_2018_20210504-1416normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
 
     
-    plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo__PuppiMET-genMET_2018_20210427-1222normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_MSE__PuppiMET-genMET_2018_20210429-1529normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo__genMET_2018_20210429-1119normDistr","TTbar_amcatnlo","genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo__PtNuNu_2018_20210429-1832normDistr","TTbar_amcatnlo","PtNuNu",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_MAPE__PuppiMET-genMET_2018_20210429-2226normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_MAPE__PuppiMET-genMET_2018_20210430-1058normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_emu__PuppiMET-genMET_2018_20210503-1224normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_FristBatchNorm_emu__PuppiMET-genMET_2018_20210503-1758normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_FristBatchNorm_removeNonNeg_emu__PuppiMET-genMET_2018_20210504-1241normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_FristBatchNorm_removeNonNeg_30EP_emu__PuppiMET-genMET_2018_20210504-1416normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_FristBatchNorm_removeNonNeg_30EP_emu__PuppiMET-genMET_2018_20210504-1429normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_MinMaxScaled__PuppiMET-genMET_2018_20210505-1000normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False,normalize=True)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_StandardScaled__PuppiMET-genMET_2018_20210505-1137normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False,standardize=True)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_MAPE_removeNonNeg__PuppiMET-genMET_2018_20210505-1345normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/Inlusive_amcatnlo_FristBatchNorm_removeNonNeg_200Shift_emu__PuppiMET-genMET_2018_20210504-1459normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
+    plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo__PuppiMET-genMET_2018_20210427-1222normDistr","TTbar_amcatnlo","PuppiMET-genMET",updateInput=True,patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_MSE__PuppiMET-genMET_2018_20210429-1529normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo__genMET_2018_20210429-1119normDistr","TTbar_amcatnlo","genMET",updateInput=True,patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo__PtNuNu_2018_20210429-1832normDistr","TTbar_amcatnlo","PtNuNu",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_MAPE__PuppiMET-genMET_2018_20210429-2226normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_MAPE__PuppiMET-genMET_2018_20210430-1058normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_emu__PuppiMET-genMET_2018_20210503-1224normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_FristBatchNorm_emu__PuppiMET-genMET_2018_20210503-1758normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_FristBatchNorm_removeNonNeg_emu__PuppiMET-genMET_2018_20210504-1241normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_FristBatchNorm_removeNonNeg_30EP_emu__PuppiMET-genMET_2018_20210504-1416normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_FristBatchNorm_removeNonNeg_30EP_emu__PuppiMET-genMET_2018_20210504-1429normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_MinMaxScaled__PuppiMET-genMET_2018_20210505-1000normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False,normalize=True)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_StandardScaled__PuppiMET-genMET_2018_20210505-1137normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False,standardize=True)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_MAPE_removeNonNeg__PuppiMET-genMET_2018_20210505-1345normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/Inlusive_amcatnlo_FristBatchNorm_removeNonNeg_200Shift_emu__PuppiMET-genMET_2018_20210504-1459normDistr","TTbar_amcatnlo_emu","PuppiMET-genMET",patchedTrain=False)
     
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/InlusivePatched_amcatnlo__PuppiMET-genMET_2018_20210505-1817genMETweighted","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/InlusivePatched_amcatnlo_30EP__PuppiMET-genMET_2018_20210506-1455genMETweighted","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/InlusivePatched_amcatnlo_30EP_sqrt__PuppiMET-genMET_2018_20210506-1531genMETweighted","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/InlusivePatched_amcatnlo_30EP_sqrt_305Bins__PuppiMET-genMET_2018_20210506-1546genMETweighted","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/InlusivePatched_amcatnlo_30EP_sqrt_20Bins__PuppiMET-genMET_2018_20210506-1603genMETweighted","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/InlusivePatched_amcatnlo_30EP__PuppiMET-genMET_2018_20210506-1626normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/InlusivePatched_amcatnlo__PuppiMET-genMET_2018_20210505-1817genMETweighted","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/InlusivePatched_amcatnlo_30EP__PuppiMET-genMET_2018_20210506-1455genMETweighted","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/InlusivePatched_amcatnlo_30EP_sqrt__PuppiMET-genMET_2018_20210506-1531genMETweighted","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/InlusivePatched_amcatnlo_30EP_sqrt_305Bins__PuppiMET-genMET_2018_20210506-1546genMETweighted","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/InlusivePatched_amcatnlo_30EP_sqrt_20Bins__PuppiMET-genMET_2018_20210506-1603genMETweighted","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/InlusivePatched_amcatnlo_30EP__PuppiMET-genMET_2018_20210506-1626normDistr","TTbar_amcatnlo","PuppiMET-genMET",patchedTrain=False)

@@ -28,12 +28,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler,StandardScaler
 from sklearn.utils.class_weight import compute_class_weight,compute_sample_weight
 import shap
+import seaborn as sns
     
 def bJetRegression_Model():
     model = Sequential()
     model.add(BatchNormalization())
     #  ~model.add(Dense(53, input_dim=53))
-    model.add(Dense(54, input_dim=54))
+    #  ~model.add(Dense(54, input_dim=54))
+    model.add(Dense(34, input_dim=34))
     model.add(BatchNormalization())
     
     model.add(Dense(1024))
@@ -216,6 +218,15 @@ def plot_Output(dataPath,inputVars,modelPath,treeName,targetName,target,updateIn
     
     print(val_x)
     
+    #Correlation plot
+    plt.figure()
+    plt.matshow(train_x.corr())
+    plt.xticks(range(train_x.select_dtypes(['number']).shape[1]), train_x.select_dtypes(['number']).columns, fontsize=3, rotation=90)
+    plt.yticks(range(train_x.select_dtypes(['number']).shape[1]), train_x.select_dtypes(['number']).columns, fontsize=3)
+    cb = plt.colorbar()
+    cb.ax.tick_params(labelsize=8)
+    plt.savefig("outputComparison/2016/2D/"+modelPath.split("/")[-1]+"/correlation.pdf")
+    
     # Compare DNN and target - validation sample
     plt.figure()
     val_x[["DNN_1",target[0]]].plot.hist(alpha=0.5,bins=500,density=True)
@@ -370,13 +381,15 @@ if __name__ == "__main__":
     # Define Input Variables
     #  ~inputVars = ["PuppiMET","METunc_Puppi","MET","HT","nJets","n_Interactions","Lep1_flavor","Lep2_flavor","Lep1_pt","Lep1_phi","Lep1_eta","Lep1_E","Lep2_pt","Lep2_phi","Lep2_eta","Lep2_E","Jet1_pt","Jet1_phi","Jet1_eta","Jet1_E","Jet2_pt","Jet2_phi","Jet2_eta","Jet2_E","dPhiMETnearJet","dPhiMETfarJet","dPhiMETleadJet","dPhiMETlead2Jet","dPhiMETbJet","dPhiLep1Lep2","dPhiJet1Jet2","METsig","MHT","MT","looseLeptonVeto","dPhiMETnearJet_Puppi","dPhiMETfarJet_Puppi","dPhiMETleadJet_Puppi","dPhiMETlead2Jet_Puppi","dPhiMETbJet_Puppi","dPhiLep1bJet","dPhiLep1Jet1","mLL","PFMET_phi","PuppiMET_phi","CaloMET","CaloMET_phi","MT2","vecsum_pT_allJet","vecsum_pT_l1l2_allJet","mass_l1l2_allJet","ratio_vecsumpTlep_vecsumpTjet","mjj"]
     inputVars = ["PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","METunc_Puppi","MET*cos(PFMET_phi)","MET*sin(PFMET_phi)","HT*cos(HT_phi)","HT*sin(HT_phi)","nJets","n_Interactions","Lep1_flavor","Lep2_flavor","Lep1_pt*cos(Lep1_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_eta","Lep1_E","Lep2_pt*cos(Lep2_phi)","Lep2_pt*sin(Lep2_phi)","Lep2_eta","Lep2_E","Jet1_pt*cos(Jet1_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_eta","Jet1_E","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Jet2_eta","Jet2_E","dPhiMETnearJet","dPhiMETfarJet","dPhiMETleadJet","dPhiMETlead2Jet","dPhiMETbJet","dPhiLep1Lep2","dPhiJet1Jet2","METsig","MHT","MT","looseLeptonVeto","dPhiMETnearJet_Puppi","dPhiMETfarJet_Puppi","dPhiMETleadJet_Puppi","dPhiMETlead2Jet_Puppi","dPhiMETbJet_Puppi","dPhiLep1bJet","dPhiLep1Jet1","mLL","CaloMET*cos(CaloMET_phi)","CaloMET*sin(CaloMET_phi)","MT2","vecsum_pT_allJet","vecsum_pT_l1l2_allJet","mass_l1l2_allJet","ratio_vecsumpTlep_vecsumpTjet","mjj"]
+    #  ~inputVars = ["HT*cos(HT_phi)","HT*sin(HT_phi)","nJets","n_Interactions","Lep1_flavor","Lep2_flavor","Lep1_pt*cos(Lep1_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_eta","Lep1_E","Lep2_pt*cos(Lep2_phi)","Lep2_pt*sin(Lep2_phi)","Lep2_eta","Lep2_E","Jet1_pt*cos(Jet1_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_eta","Jet1_E","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Jet2_eta","Jet2_E","dPhiLep1Lep2","dPhiJet1Jet2","MHT","looseLeptonVeto","dPhiLep1bJet","dPhiLep1Jet1","mLL","vecsum_pT_allJet","vecsum_pT_l1l2_allJet","mass_l1l2_allJet","ratio_vecsumpTlep_vecsumpTjet","mjj"]
     
     #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xComponent_30EP","TTbar_amcatnlo","PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)",updateInput=True)    #not working here since changed to 2D
     #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xComponent","TTbar_amcatnlo","PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)",updateInput=True)         #not working here since changed to 2D
     #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_30EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True)
     #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True)
     #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True)
+    trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP_withoutMETinputs","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True)
     
-    shapleyValues(dataPath,inputVars,"trainedModel_Keras/2016/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2016_20210521-1448normDistr","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"])
+    #  ~shapleyValues(dataPath,inputVars,"trainedModel_Keras/2016/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2016_20210521-1448normDistr","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"])
     
     #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2016/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2016_20210521-1448normDistr","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"])
