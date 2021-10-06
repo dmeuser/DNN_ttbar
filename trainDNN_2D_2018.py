@@ -29,7 +29,9 @@ from sklearn.preprocessing import MinMaxScaler,StandardScaler
 from sklearn.utils.class_weight import compute_class_weight,compute_sample_weight
 import shap
 import seaborn as sns
-    
+import tensorflow as tf
+
+# model roughly taken from https://cms.cern.ch/iCMS/analysisadmin/cadilines?line=HIG-18-027
 def bJetRegression_Model():
     model = Sequential()
     model.add(BatchNormalization())
@@ -67,79 +69,83 @@ def bJetRegression_Model():
     model.add(Dropout(0.1))
     model.add(LeakyReLU(alpha=0.2))
     
-    #  ~model.add(Dense(1, kernel_initializer='normal', activation='linear',kernel_constraint=NonNeg()))
-    #  ~model.add(Dense(1, kernel_initializer='normal', activation='linear'))
     model.add(Dense(2, kernel_initializer='normal', activation='linear'))
-    #  ~model.add(Dense(1, kernel_initializer='normal', activation='linear'))
-    #  ~model.compile(loss="logcosh", optimizer=Adam(lr=0.001),metrics=['mean_squared_error','mean_absolute_percentage_error'])
     model.compile(loss="logcosh", optimizer=Adam(lr=0.0001),metrics=['mean_squared_error','mean_absolute_percentage_error'])
-    #  ~model.compile(loss="mean_absolute_percentage_error", optimizer=Adam(lr=0.0001),metrics=['mean_squared_error','logcosh'])
-    #  ~model.compile(loss="mean_squared_error", optimizer=Adam(lr=0.001))
-    #  ~model.compile(loss="huber_loss", optimizer=Adam(lr=0.001))
     return model
-  
+
+# function to get input from pkl if available, if update=true the pkl is constructed from the root file  
 def getInputArray_allBins_nomDistr(path,inputVars,targetName,target,update,treeName,normalize=False,standardize=False):
-    for var in target:
+    for var in target:      # append target variables to be also read in
         inputVars.append(var)
     
-    outputPath="input/2018/2D/"+treeName+"_"+targetName+"_nomDistr.pkl"
-        
+    outputPath="input/2018/2D/"+treeName+"_"+targetName+"_nomDistr.pkl"     # output path of pkl
+    
+    # option to only use emu events for training (mainly for studies connected to 40 GeV cut)
     if treeName.split("_")[-1]=="emu":
         only_emu=True
         treeName=treeName.replace("_emu","")
     else:
         only_emu=False
-        
+    
+    # rename pkl if input is normalized or standardized
     if normalize:
         outputPath=outputPath.replace("_nomDistr","normalized_nomDistr")
     if standardize:
         outputPath=outputPath.replace("_nomDistr","standardized_nomDistr")
-        
+    
+    # if update=true new pkl is created from root file (takes much longer than using existing pkl)
     if update:
         root_file = uproot.open(path)
         events = root_file["ttbar_res100.0;1"][treeName+";1"]
-        cut = "(PuppiMET>0)"
+        cut = "(PuppiMET>0)"    # use only events selected by reco selection
         if only_emu:
-            cut+="&(emu==1)"
-        inputFeatures = events.arrays(inputVars,cut,library="pd")
+            cut+="&(emu==1)"    # use only emu events if selected
+        inputFeatures = events.arrays(inputVars,cut,library="pd")   # load inputs from rootfile
         
-        if normalize:
+        if normalize:   # normalize inputs
             scaler = MinMaxScaler()
             scaledFeatures = scaler.fit_transform(inputFeatures.values)
             inputFeatures = pd.DataFrame(scaledFeatures, index=inputFeatures.index, columns=inputFeatures.columns)
-        elif standardize:
+        elif standardize:   # standardize inputs
             scaler = StandardScaler()
             scaledFeatures = scaler.fit_transform(inputFeatures.values)
             inputFeatures = pd.DataFrame(scaledFeatures, index=inputFeatures.index, columns=inputFeatures.columns)
         
-        inputFeatures.to_pickle(outputPath)
+        inputFeatures.to_pickle(outputPath)     # write inputs to pkl
     else:
-        inputFeatures=pd.read_pickle(outputPath)
+        inputFeatures=pd.read_pickle(outputPath)    # read inputs from existing pkl
     
     print("Train with:",outputPath)
-        
+    
+    # returns nD array of inputs, 2D array of targets and vector of inputNames
     return inputFeatures[inputVars[:-2]],inputFeatures[target],inputVars
 
+# function to train model
 def trainKeras(dataPath,inputVars,name,treeName,targetName,target,updateInput=False,permuationImportance=False,normalize=False,standardize=False):
+            
+        # set number of epochs and batchsize
+        epochs = 50
+        batch_size = 5000
+        
         stringStart=datetime.datetime.now().strftime("%Y%m%d-%H%M")
 
-        modelName=name+"_"+"_"+targetName+"_2018_"+stringStart
+        modelName=name+"_"+"_"+targetName+"_2018_"+stringStart      # time added to name of trained model 
         
+        # get inputs
         x,y,inputVars=getInputArray_allBins_nomDistr(dataPath,inputVars,targetName,target,updateInput,treeName,normalize,standardize)
-        modelName+="normDistr"
         
+        # split sample to into training and test sample (random_state produces reproducible splitting)
         train_x, val_x, train_y, val_y = train_test_split(x, y, random_state=30, test_size=0.2, train_size=0.8)
         
-        #  ~es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=5)
+        #  ~es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=5)   # could be used for early stopping of training
         logdir="./logs/2018/2D/"+modelName
-        tensorboard_callback = TensorBoard(log_dir=logdir)
+        tensorboard_callback = TensorBoard(log_dir=logdir)      # setup tensorboard to log training progress
         
-        #  ~my_model = KerasRegressor(build_fn=bJetRegression_Model, epochs=200, batch_size=5000, verbose=2)
-        my_model = KerasRegressor(build_fn=bJetRegression_Model, epochs=50, batch_size=5000, verbose=2)
-        #  ~my_model = KerasRegressor(build_fn=bJetRegression_Model, epochs=30, batch_size=5000, verbose=2)
+        # setup keras and train model
+        my_model = KerasRegressor(build_fn=bJetRegression_Model, epochs=epochs, batch_size=batch_size, verbose=2)
         my_model.fit(train_x,train_y,validation_data=(val_x,val_y),callbacks=[tensorboard_callback])
-        #  ~my_model.fit(train_x,train_y,validation_data=(val_x,val_y),callbacks=[es])
         
+        # derive permutation importance, if selected
         if permuationImportance:
             perm = PermutationImportance(my_model, random_state=1).fit(train_x,train_y)
             output = eli5.format_as_text(eli5.explain_weights(perm, target_names = target,feature_names = inputVars[:-1]))
@@ -149,6 +155,7 @@ def trainKeras(dataPath,inputVars,name,treeName,targetName,target,updateInput=Fa
             output_file.write(output)
             output_file.close()
         
+        # evaluate model with training and validation sample
         y_hat_train = my_model.predict(train_x)
         y_hat_test = my_model.predict(val_x)
 
@@ -162,35 +169,48 @@ def trainKeras(dataPath,inputVars,name,treeName,targetName,target,updateInput=Fa
         my_model.model.save('trainedModel_Keras/2018/2D/'+modelName)
         my_model.model.save('trainedModel_Keras/2018/2D/'+modelName+".h5")
 
-def shapleyValues(dataPath,inputVars,modelPath,treeName,targetName,target,updateInput=False):     #Shapley Values for Trained DNN
-        
+# function to derive shapley values for trained model
+def shapleyValues(dataPath,inputVars,modelPath,treeName,targetName,target,updateInput=False):
+    
+    # get inputs
     x,y,inputVars=getInputArray_allBins_nomDistr(dataPath,inputVars,targetName,target,updateInput,treeName)
     
+    # use only n events for deriving shapley values (full statistics takes way too long!)
     x_test=x.sample(n=10000)
     x_test=x_test.to_numpy()
     
+    # load trained model
     model = load_model(modelPath+".h5")
     
+    # derive shapley values
     ex = shap.GradientExplainer(model, x_test)
+    
+    # plot shapley values
     shap_values = ex.shap_values(x_test)
     max_display = x_test.shape[1]
     figure = plt.gcf()  # get current figure
     shap.summary_plot(shap_values, x_test, plot_type = "bar", feature_names = inputVars[:-1], max_display = max_display, show=False)
     figure.set_size_inches(32, 18)
     plt.savefig("ShapleyValues/2018/2D/shap_{0}.pdf".format(modelPath.split("/")[-1]))
-    
+
+# function to derive different control performance plots based on trained model
 def plot_Output(dataPath,inputVars,modelPath,treeName,targetName,target,updateInput=False,normalize=False,standardize=False):
-    if not os.path.exists("outputComparison/2018/2D/"+modelPath.split("/")[-1]):
+    
+    if not os.path.exists("outputComparison/2018/2D/"+modelPath.split("/")[-1]):    # create output folder for plots if not available
         os.makedirs("outputComparison/2018/2D/"+modelPath.split("/")[-1])
     
+    # get inputs
     x,y,inputVars=getInputArray_allBins_nomDistr(dataPath,inputVars,targetName,target,updateInput,treeName,normalize,standardize)
     
+    # perform same splitting as in training (random_state!)
     train_x, val_x, train_y, val_y = train_test_split(x, y, random_state=30, test_size=0.2, train_size=0.8)
     
     model = load_model(modelPath+".h5")
     
-    #  ~train_x=train_x.head(100000)
+    #  ~train_x=train_x.head(100000)    # could be used to only create plots for limited statistics (mainly for debugging)
     #  ~val_x=val_x.head(100000)
+    
+    # evaluate trained model
     y_hat_train = model.predict(train_x,use_multiprocessing=True)
     y_hat_val = model.predict(val_x,use_multiprocessing=True)
     
@@ -374,25 +394,16 @@ def plot_Output(dataPath,inputVars,modelPath,treeName,targetName,target,updateIn
 #############################################################
 
 if __name__ == "__main__":
-    #  ~print("---------------------------No negative contraint on output----------------------------")
     # Define input data path
-    #  ~dataPath="/net/data_cms1b/user/dmeuser/top_analysis/2018/v01/minTrees/100.0/TTbar_diLepton.root"
-    dataPath="/net/data_cms1b/user/dmeuser/top_analysis/2018/v01/minTrees/100.0/TTbar_amcatnlo.root"
+    dataPath="/net/data_cms1b/user/dmeuser/top_analysis/2018/v04/minTrees/100.0/Nominal/TTbar_amcatnlo_merged.root"
 
     #  ~# Define Input Variables
-    #  ~inputVars = ["PuppiMET","METunc_Puppi","MET","HT","nJets","n_Interactions","Lep1_flavor","Lep2_flavor","Lep1_pt","Lep1_phi","Lep1_eta","Lep1_E","Lep2_pt","Lep2_phi","Lep2_eta","Lep2_E","Jet1_pt","Jet1_phi","Jet1_eta","Jet1_E","Jet2_pt","Jet2_phi","Jet2_eta","Jet2_E","dPhiMETnearJet","dPhiMETfarJet","dPhiMETleadJet","dPhiMETlead2Jet","dPhiMETbJet","dPhiLep1Lep2","dPhiJet1Jet2","METsig","MHT","MT","looseLeptonVeto","dPhiMETnearJet_Puppi","dPhiMETfarJet_Puppi","dPhiMETleadJet_Puppi","dPhiMETlead2Jet_Puppi","dPhiMETbJet_Puppi","dPhiLep1bJet","dPhiLep1Jet1","mLL","PFMET_phi","PuppiMET_phi","CaloMET","CaloMET_phi","MT2","vecsum_pT_allJet","vecsum_pT_l1l2_allJet","mass_l1l2_allJet","ratio_vecsumpTlep_vecsumpTjet","mjj"]
     inputVars = ["PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","METunc_Puppi","MET*cos(PFMET_phi)","MET*sin(PFMET_phi)","HT*cos(HT_phi)","HT*sin(HT_phi)","nJets","n_Interactions","Lep1_flavor","Lep2_flavor","Lep1_pt*cos(Lep1_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_eta","Lep1_E","Lep2_pt*cos(Lep2_phi)","Lep2_pt*sin(Lep2_phi)","Lep2_eta","Lep2_E","Jet1_pt*cos(Jet1_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_eta","Jet1_E","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Jet2_eta","Jet2_E","dPhiMETnearJet","dPhiMETfarJet","dPhiMETleadJet","dPhiMETlead2Jet","dPhiMETbJet","dPhiLep1Lep2","dPhiJet1Jet2","METsig","MHT","MT","looseLeptonVeto","dPhiMETnearJet_Puppi","dPhiMETfarJet_Puppi","dPhiMETleadJet_Puppi","dPhiMETlead2Jet_Puppi","dPhiMETbJet_Puppi","dPhiLep1bJet","dPhiLep1Jet1","mLL","CaloMET*cos(CaloMET_phi)","CaloMET*sin(CaloMET_phi)","MT2","vecsum_pT_allJet","vecsum_pT_l1l2_allJet","mass_l1l2_allJet","ratio_vecsumpTlep_vecsumpTjet","mjj"]
     
-    #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xComponent_30EP","TTbar_amcatnlo","PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)",updateInput=True)    #not working here since changed to 2D
-    #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xComponent","TTbar_amcatnlo","PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)",updateInput=True)         #not working here since changed to 2D
-    #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_30EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True)
-    #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True)
-    #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True)
+    #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=False)
     
     #  ~shapleyValues(dataPath,inputVars,"trainedModel_Keras/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20210519-1014normDistr","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"])
     
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2D/Inlusive_amcatnlo_xComponent_30EP__PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)_2018_20210511-1031normDistr","TTbar_amcatnlo","PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)")
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/2D/Inlusive_amcatnlo_xyComponent_30EP__diff_xy_2018_20210511-1254normDistr","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True)
-    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/2D/Inlusive_amcatnlo_xyComponent__diff_xy_2018_20210511-1655normDistr","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"])
-    plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20210519-1014normDistr","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True)
+    #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20210519-1014normDistr","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True)
+    plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20211006-1559","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=False)
 
