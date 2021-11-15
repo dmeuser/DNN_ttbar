@@ -1,0 +1,8 @@
+*.log
+*.out
+LossPlots/*
+input/*
+logs/*
+HyperParameterResuls/*
+outputComparison/*
+trainedModel_Keras/*

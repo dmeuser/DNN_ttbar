@@ -6,8 +6,8 @@ import struct
 import datetime
 
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
-#  ~os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
+#  ~os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
 
 from tensorflow.keras import Sequential, regularizers
 from tensorflow.keras.layers import Dense, Activation, Dropout, LeakyReLU, BatchNormalization
@@ -30,8 +30,26 @@ from sklearn.utils.class_weight import compute_class_weight,compute_sample_weigh
 import shap
 import seaborn as sns
 import tensorflow as tf
-from bayes_opt import BayesianOptimization
+#  ~gpus = tf.config.experimental.list_physical_devices('GPU')
+#  ~tf.config.experimental.set_memory_growth(gpus[0], True)
+
+from BayesianOptimization.bayes_opt import BayesianOptimization
+from BayesianOptimization.bayes_opt.logger import JSONLogger
+from BayesianOptimization.bayes_opt.event import Events
+from BayesianOptimization.bayes_opt.util import load_logs
 import scipy.spatial.distance as ssd
+
+def limitgpu(maxmem):
+    gpus = tf.config.list_physical_devices('GPU')
+    if gpus:
+        # Restrict TensorFlow to only allocate a fraction of GPU memory
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_virtual_device_configuration(gpu,
+                        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=maxmem)])
+        except RuntimeError as e:
+            # Virtual devices must be set before GPUs have been initialized
+            print(e)
 
 def rmsFUNC(x):
     return np.sqrt(np.mean(np.square(x)))
@@ -60,14 +78,15 @@ def bJetRegression_Model(lr=0.0001, dout=0.3, lamb=0.05, nLayer=6, nodeFac=1., a
     
     
     model.add(Dense(2, kernel_initializer='normal', activation='linear'))
-    model.compile(loss="logcosh", optimizer=Adam(lr=lr),metrics=['mean_squared_error','mean_absolute_percentage_error',"logcosh"])
+    #  ~model.compile(loss="logcosh", optimizer=Adam(lr=lr),metrics=['mean_squared_error','mean_absolute_percentage_error',"logcosh"])
+    model.compile(loss="logcosh", optimizer=Adam(lr=lr),metrics=['mean_squared_error',"logcosh"])
     return model
 
 # function to get input from pkl if available, if update=true the pkl is constructed from the root file  
 def getInputArray_allBins_nomDistr(path,inputVars,targetName,target,update,treeName,normalize=False,standardize=False,genMETweighted=False):
 	
     appendCount = 0
-    for subList in [target, ["PtNuNu", "PtNuNu_phi", "Lep1_phi", "Lep2_phi", "PuppiMET", "PuppiMET_phi"]]:      # append target variables to be also read in
+    for subList in [target, ["genMET", "PtNuNu", "PtNuNu_phi", "Lep1_phi", "Lep2_phi", "PuppiMET", "PuppiMET_phi"]]:      # append target variables to be also read in
         for var in subList:
             inputVars.append(var)
             appendCount+=1
@@ -151,11 +170,11 @@ def trainKeras(dataPath,inputVars,name,treeName,targetName,target, lr, dout, lam
 		    
         # split sample to into training and test sample (random_state produces reproducible splitting)
         if genMETweighted:
-            train_x, test_x, train_y, test_y, train_weights, test_weights, train_metVals, test_metVals = train_test_split(x, y, sampleWeights, metVals, random_state=28, test_size=0.2, train_size=0.8)
-            train_x, val_x, train_y, val_y, train_weights, val_weights, train_metVals, val_metVals = train_test_split(train_x, train_y, train_weights, train_metVals, random_state=28, test_size=0.25, train_size=0.75)
+            train_x, test_x, train_y, test_y, train_weights, test_weights, train_metVals, test_metVals = train_test_split(x, y, sampleWeights, metVals, random_state=30, test_size=0.2, train_size=0.8)
+            train_x, val_x, train_y, val_y, train_weights, val_weights, train_metVals, val_metVals = train_test_split(train_x, train_y, train_weights, train_metVals, random_state=30, test_size=0.25, train_size=0.75)
         else:
-            train_x, test_x, train_y, test_y, train_metVals, test_metVals = train_test_split(x, y, metVals, random_state=28, test_size=0.2, train_size=0.8)
-            train_x, val_x, train_y, val_y, train_metVals, val_metVals = train_test_split(train_x, train_y, train_metVals, random_state=28, test_size=0.25, train_size=0.75)
+            train_x, test_x, train_y, test_y, train_metVals, test_metVals = train_test_split(x, y, metVals, random_state=30, test_size=0.2, train_size=0.8)
+            train_x, val_x, train_y, val_y, train_metVals, val_metVals = train_test_split(train_x, train_y, train_metVals, random_state=30, test_size=0.25, train_size=0.75)
         
         #  ~es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=5)   # could be used for early stopping of training
         logdir="./logs/2018/2D/"+modelName
@@ -220,6 +239,7 @@ def trainKeras(dataPath,inputVars,name,treeName,targetName,target, lr, dout, lam
         countsDNN,bins = np.histogram(np.clip(val_x["DNN_MET"],min_x+0.01,max_x-0.01),bins=500,range=(min_x,max_x))
         countsGen,bins = np.histogram(np.clip(val_x["genMET"],min_x+0.01,max_x-0.01),bins=500,range=(min_x,max_x))
         countsDNN, countsGen = np.array(countsDNN), np.array(countsGen)
+        #  ~print(countsGen[-30:])
         print("\n\nshould be 0",sum(countsDNN)-sum(countsGen)) 
         jensenShannon_met_val = ssd.jensenshannon(countsDNN, countsGen)
         chisquare_met_val = sum((countsDNN-countsGen)**2/countsGen)/500
@@ -229,8 +249,9 @@ def trainKeras(dataPath,inputVars,name,treeName,targetName,target, lr, dout, lam
         val_metVals["DNN_MET_X"] = val_x["DNN_MET_X"]
         val_metVals["DNN_MET_Y"] = val_x["DNN_MET_Y"]
         val_metVals["genMET"] = val_x["genMET"]
-        temp_metVals,_ = val_metVals.groupby(np.where(val_metVals["PuppiMET"]>=0, 0, 1))
-        val_metVals = temp_metVals[1]
+        temp_metVals = val_metVals.groupby(np.where(val_metVals["PuppiMET"]>=0, True, False))
+        #  ~print(temp_metVals)
+        val_metVals = temp_metVals.get_group(True)
         
         val_metVals["DNN_dPhiMetNearLep"] = np.array([np.abs(np.arctan2(val_x["DNN_MET_Y"],val_x["DNN_MET_X"])-val_metVals["Lep1_phi"]), np.abs(2*np.pi-np.abs(np.arctan2(val_x["DNN_MET_Y"],val_x["DNN_MET_X"])-val_metVals["Lep1_phi"])), np.abs(np.arctan2(val_x["DNN_MET_Y"],val_x["DNN_MET_X"])-val_metVals["Lep2_phi"]), np.abs(2*np.pi-np.abs(np.arctan2(val_x["DNN_MET_Y"],val_x["DNN_MET_X"])-val_metVals["Lep2_phi"]))]).min(axis=0)
         
@@ -239,19 +260,43 @@ def trainKeras(dataPath,inputVars,name,treeName,targetName,target, lr, dout, lam
         metBins = np.array([0,40,80,120,160,230,400])
         dphiBins = np.array([0,0.7,1.4,3.15])
         
+        met_gen_val = np.clip(val_metVals["PtNuNu"], metBins[0], metBins[-1])
+        met_reco_val = np.clip(val_metVals["DNN_MET"], metBins[0], metBins[-1])
+        dphi_gen_val = val_metVals["dPhi_PtNuNuNearLep"]
+        dphi_reco_val = val_metVals["DNN_dPhiMetNearLep"]
         
-        met_gen = np.clip(train_metVals["PtNuNu"], metBins[0], metBins[-1])
-        met_reco = np.clip(train_metVals["DNN_MET"], metBins[0], metBins[-1])
-        dphi_gen = train_metVals["dPhi_PtNuNuNearLep"]
-        dphi_reco = train_metVals["DNN_dPhiMetNearLep"]
+        histo2D_Gen_val, xedges, yedges = np.histogram2d(met_gen_val, dphi_gen_val, bins=[metBins, dphiBins])
+        histo2D_Reco_val, xedges, yedges = np.histogram2d(met_reco_val, dphi_reco_val, bins=[metBins, dphiBins])
+        histo2D_Both_val = np.copy(histo2D_Gen_val)
+        
+        for i in range(len(metBins)-1):
+            for j in range(len(dphiBins)-1):
+                temp1 = np.where((met_gen_val>=metBins[i]) & (met_gen_val<=metBins[i+1]) & (dphi_gen_val>=dphiBins[j]) & (dphi_gen_val<=dphiBins[j+1]), True, False)
+                temp2 = np.where((met_reco_val>=metBins[i]) & (met_reco_val<=metBins[i+1]) & (dphi_reco_val>=dphiBins[j]) & (dphi_reco_val<=dphiBins[j+1]), True, False)
+                histo2D_Both_val[i,j] = sum(np.where(temp1 & temp2, 1, 0))
+        
+        histo2D_Gen_val=histo2D_Gen_val.T
+        histo2D_Reco_val=histo2D_Reco_val.T
+        histo2D_Both_val=histo2D_Both_val.T
+        
+        
+        puri_vals = histo2D_Both_val/histo2D_Reco_val
+        epuri_vals = puri_vals*np.sqrt(1/histo2D_Both_val+1/histo2D_Reco_val)
+        stabi_vals = histo2D_Both_val/histo2D_Gen_val
+        estabi_vals = stabi_vals*np.sqrt(1/histo2D_Both_val+1/histo2D_Gen_val)
+        
         
         print("loss (logcosh w/o regularisation term): {0:.5g}".format(logcosh_val))
         print("MSE met difference absolute: {0:.5g}".format(met_MSE_val))
         print("mean met difference vectorial: {0:.5g}".format(metVec_mean_val))
         print("Jensen-Shannon distance met: {0:.5g}".format(jensenShannon_met_val))
         print("chi square met distribution: {0:.5g}".format(chisquare_met_val))
+        print("purity last bin: {0:.5g} +- {1:.5g}".format(puri_vals[-1,-1], epuri_vals[-1,-1]))
+        print("purity second to last bin: {0:.5g} +- {1:.5g}".format(puri_vals[-1,-2], epuri_vals[-1,-2]))
+        print("stability last bin: {0:.5g} +- {1:.5g}".format(stabi_vals[-1,-1], estabi_vals[-1,-1]))
+        print("stability second to last bin: {0:.5g} +- {1:.5g}".format(stabi_vals[-1,-2], estabi_vals[-1,-2]))
         
-        return [logcosh_val,met_MSE_val,metVec_mean_val,jensenShannon_met_val,chisquare_met_val]
+        return [logcosh_val,met_MSE_val,metVec_mean_val,jensenShannon_met_val,chisquare_met_val, puri_vals[-1,-1], epuri_vals[-1,-1], puri_vals[-1,-2], epuri_vals[-1,-2], stabi_vals[-1,-1], estabi_vals[-1,-1], stabi_vals[-1,-2], estabi_vals[-1,-2]]
         
     
 def fit_test(x,y):
@@ -261,23 +306,40 @@ def fit_test(x,y):
 def fit_opt(lr, dout, lamb, batch, nLayer, nodeFac, alph):
     dataPath="/net/data_cms1b/user/dmeuser/top_analysis/2018/v04/minTrees/100.0/Nominal/TTbar_amcatnlo_merged.root"
     inputVars = ["PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","METunc_Puppi","MET*cos(PFMET_phi)","MET*sin(PFMET_phi)","HT*cos(HT_phi)","HT*sin(HT_phi)","nJets","n_Interactions","Lep1_flavor","Lep2_flavor","Lep1_pt*cos(Lep1_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_eta","Lep1_E","Lep2_pt*cos(Lep2_phi)","Lep2_pt*sin(Lep2_phi)","Lep2_eta","Lep2_E","Jet1_pt*cos(Jet1_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_eta","Jet1_E","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Jet2_eta","Jet2_E","dPhiMETnearJet","dPhiMETfarJet","dPhiMETleadJet","dPhiMETlead2Jet","dPhiMETbJet","dPhiLep1Lep2","dPhiJet1Jet2","METsig","MHT","MT","looseLeptonVeto","dPhiMETnearJet_Puppi","dPhiMETfarJet_Puppi","dPhiMETleadJet_Puppi","dPhiMETlead2Jet_Puppi","dPhiMETbJet_Puppi","dPhiLep1bJet","dPhiLep1Jet1","mLL","CaloMET*cos(CaloMET_phi)","CaloMET*sin(CaloMET_phi)","MT2","vecsum_pT_allJet","vecsum_pT_l1l2_allJet","mass_l1l2_allJet","ratio_vecsumpTlep_vecsumpTjet","mjj"]
+    nodeFacs = [1./8, 1./4, 1./2, 1., 2., 4.]
+    #  ~nodeFac2 = min(nodeFacs, key=lambda x:abs(x-nodeFac))
+    nodeFac2 = nodeFacs[int(np.round(nodeFac))]
     
-    val_MET_mean = trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"], lr, dout, lamb, batch, nLayer, nodeFac, alph,updateInput=True,genMETweighted=True)
+    print(np.exp(lr), dout, np.exp(lamb), int(np.round(np.exp(batch))), int(np.round(nLayer)), nodeFac2, alph)
     
-    return val_MET_mean
+    val_MET_mean = trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"], np.exp(lr), dout, np.exp(lamb), int(np.round(np.exp(batch))), int(np.round(nLayer)), nodeFac2, alph,updateInput=True,genMETweighted=True)
+    with open("HyperParameterResuls/BayesOptRes.csv", "ab") as f:
+        np.savetxt(f, np.array([np.zeros(len(val_MET_mean)), val_MET_mean]), delimiter=",")
+    return val_MET_mean[0]
 
 def hyperOpt():
     #  ~pbounds = {'lr': (1e-5, 1e-3), 'dout':(0.1,0.5), 'lamb':(0.001,0.1)}
-    pbounds = {'x': (2, 4), 'y': (-3, 3)}
+    pbounds = {'lr': (np.log(0.00001), np.log(0.05)), 'dout': (0.1, 0.5), 'lamb': (np.log(0.0001), np.log(0.2)), 'batch': (np.log(250), np.log(10000)), 'nLayer': (1, 8), 'nodeFac': (0,5), 'alph': (0, 0.4), }
 
     optimizer = BayesianOptimization(
-        f=fit_test,
+        f=fit_opt,
         pbounds=pbounds,
         verbose=2, # verbose = 1 prints only when a maximum is observed, verbose = 0 is silent
-        random_state=30,
+        random_state=3,
+    )
+    
+    logger = JSONLogger(path="HyperParameterResuls/HParaLogs/logBayesNew1.json", reset=False)
+    optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
+    
+    optimizer.probe(
+        params={'lr': np.log(0.0001), 'dout': (0.35), 'lamb': np.log(0.05), 'batch': np.log(5000), 'nLayer': 6, 'nodeFac': 3, 'alph': 0.2},
+        lazy=True,
     )
 
-    optimizer.maximize(init_points=3, n_iter=12,)
+    #  ~load_logs(optimizer, 
+    #  ~load_logs(optimizer, logs=["HyperParameterResuls/HParaLogs/logBayes1.json"]);
+    #  ~load_logs(optimizer, logs=["HyperParameterResuls/HParaLogs/logHtest4 (copy 1).json"]);
+    optimizer.maximize(init_points=9, n_iter=60)
 
 
 
@@ -290,20 +352,24 @@ def GridSearch():
     #  ~lrVals = [0.00001,0.00002,0.00005,0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05]    #0.0001 before
     #  ~dout = [0., 0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7, 0.8]     #0.35 for grid, 0.3,0.4 before
     #  ~lambs = [0.,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2]     #0.05 for grid, 0.05, ... before
-    #  ~batches = [250, 500, 750, 1000, 2500, 5000, 7500, 10000, 25000, 50000]      #5000 before
+    batches = [250, 500, 750, 1000, 2000, 5000, 7500, 10000, 25000, 50000]      #5000 before
     #  ~nLayers = [1, 2, 3, 4, 5, 6, 7, 8]      #6 before
     #  ~nodeFacs = [1./8, 1./4, 1./2, 1., 2., 4.]       #1 before
-    alph = [0., 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45]       #0.2 before
+    #  ~alph = [0., 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45]       #0.2 before
+    #  ~standardvals = [0.0001, 0.35, 0.05, 5000, 6, 1, 0.2]
     #  ~bestvals = [0.0001, 0.25, 0.01, 2000, 5, 2, 0.2]
-    gridName="alphVals"
+    gridName="batchVals"
     results=[]
     #  ~results.append(["ValLoss", "MSE"])
-    for a in alph:
-        results.append(fit_opt(0.0001, 0.35, 0.05, 5000, 6, 1., a))
-        print(a)
+    for val in batches:
+        res = fit_opt(0.0001, 0.25, 0.01, val, 5, 4, 0.2)
+        results.append(res)
+        print("\n\n################################################\n"+gridName + ": " + str(val)+"\n################################################\n")
+        with open("HyperParameterResuls/"+gridName+"_opt1_backup.csv", "ab") as f:
+            np.savetxt(f, np.array([np.zeros(len(res)), res]), delimiter=",")
     results=np.array(results)
     print(results)
-    np.savetxt("HyperParameterResuls/"+gridName+".csv", results, delimiter=",")
+    np.savetxt("HyperParameterResuls/"+gridName+"_opt1.csv", results, delimiter=",")
 
 if __name__ == "__main__":
     # Define input data path
@@ -313,11 +379,12 @@ if __name__ == "__main__":
     inputVars = ["PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","METunc_Puppi","MET*cos(PFMET_phi)","MET*sin(PFMET_phi)","HT*cos(HT_phi)","HT*sin(HT_phi)","nJets","n_Interactions","Lep1_flavor","Lep2_flavor","Lep1_pt*cos(Lep1_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_eta","Lep1_E","Lep2_pt*cos(Lep2_phi)","Lep2_pt*sin(Lep2_phi)","Lep2_eta","Lep2_E","Jet1_pt*cos(Jet1_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_eta","Jet1_E","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Jet2_eta","Jet2_E","dPhiMETnearJet","dPhiMETfarJet","dPhiMETleadJet","dPhiMETlead2Jet","dPhiMETbJet","dPhiLep1Lep2","dPhiJet1Jet2","METsig","MHT","MT","looseLeptonVeto","dPhiMETnearJet_Puppi","dPhiMETfarJet_Puppi","dPhiMETleadJet_Puppi","dPhiMETlead2Jet_Puppi","dPhiMETbJet_Puppi","dPhiLep1bJet","dPhiLep1Jet1","mLL","CaloMET*cos(CaloMET_phi)","CaloMET*sin(CaloMET_phi)","MT2","vecsum_pT_allJet","vecsum_pT_l1l2_allJet","mass_l1l2_allJet","ratio_vecsumpTlep_vecsumpTjet","mjj"]
     
     #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True,genMETweighted=False)
-    
-    #  ~hyperOpt()
-    GridSearch()
+    #  ~limitgpu(4000)
+    hyperOpt()
+    #  ~GridSearch()
     #  ~print(fit_opt(0.0001, 0.4, 0.05))
     #  ~fit_opt(0.0001,0.4,0.001)
+
     
     #  ~shapleyValues(dataPath,inputVars,"trainedModel_Keras/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20210519-1014normDistr","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"])
     
