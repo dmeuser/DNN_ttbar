@@ -3,13 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.spatial.distance as ssd
 import json
+#  ~import home.home4.institut_1b.nattland.CMSSW_10_5_0.src.CombineHarvester.CombineTools.plotting as plotComb
+#  ~import CombineHarvester.CombineTools.plotting as plotComb
 #  ~from BayesianOptimization.bayes_opt import BayesianOptimization
 #  ~from BayesianOptimization.bayes_opt.logger import JSONLogger
 #  ~from BayesianOptimization.bayes_opt.event import Events
 #  ~from BayesianOptimization.bayes_opt.util import load_logs
 
 
-def plotLoss(pathList):
+def plotLoss(pathList,plotName):
     losses, steps = [], []
     for path in pathList:
         templosses, tempsteps = [], []
@@ -19,24 +21,37 @@ def plotLoss(pathList):
                 templosses.append(line.split(",")[2][:-1])
         losses.append(templosses)
         steps.append(tempsteps)
-    steps = np.array(steps, dtype=int)
-    losses = np.array(losses, dtype=float)
-    print(ssd.jensenshannon(losses[0], losses[1]))
+    stepList = [np.array(step, dtype=int) for step in steps]
+    lossList = [np.array(loss, dtype=float) for loss in losses]
+    #  ~print(stepList, lossList)
+    #  ~print(ssd.jensenshannon(losses[0], losses[1]))
     #  ~js_dist = ssd.jensenshannon(losses[0], losses[1])
     #  ~js_dist2 = ssd.jensenshannon(0.3*losses[0], losses[1])
     #  ~print(js_dist,js_dist2)
-    plt.figure("Loss Comparison Zoom")
-    plt.plot(steps[0], losses[0], color="red", ls="-", label="dropout: 0.3, $\lambda$: 0 (training)")
-    plt.plot(steps[1], losses[1], color="blue", ls="-", label="dropout: 0.4, $\lambda$: 0 (validation)")
-    #  ~plt.xlim(10,50)
-    plt.ylim(19,29)
-    plt.grid()
-    plt.ylabel("Loss")
-    plt.xlabel("Epoch")
-    plt.legend()
-    plt.show()
+    #  ~fig, ax  = plt.subplots()
+    plt.figure("testint")
+    #  ~ax.plot(stepList[0], lossList[0], color="blue", ls="-", label="oversampling with minimal noise (training)")
+    #  ~ax.plot(stepList[1], lossList[1], color="blue", ls="--", label="oversampling with minimal noise (validation)")
+    #  ~plt.plot(stepList[0], lossList[0], color="blue", ls="-", label="undersampling (training)")
+    #  ~plt.plot(stepList[1], lossList[1], color="blue", ls="--", label="undersampling (validation)")
+    #  ~plt.plot(stepList[2], lossList[2], color="red", ls="-", label="over- and undersampling (training)")
+    #  ~plt.plot(stepList[3], lossList[3], color="red", ls="--", label="over- and undersampling (validation)")
+    #  ~plt.plot(stepList[4], lossList[4], color="black", ls="-", label="genMET reweighting (training)")
+    #  ~plt.plot(stepList[5], lossList[5], color="black", ls="--", label="genMET reweighting (validation)")
+    #  ~plt.xlim(0,73)
+    #  ~plt.ylim(15,26)
+    #  ~ax.grid()
+    #  ~ax.set_ylabel("Loss")
+    #  ~ax.set_xlabel("Epoch")
+    #  ~ax.legend()
+    #  ~ax = plt.gca()
+    #  ~pos1 = ax.get_position()
+    #  ~print(pos1)
+    #  ~pos1, "testint"
+    #  ~plt.text(0.5, 0.2, r"testing123")
+    #  ~plt.show()
     #  ~plt.tight_layout()
-    #  ~plt.savefig("LossPlots/Loss_Comp_Regu.pdf")
+    #  ~fig.savefig(plotName)
 
 def fit_test(x,y):
     #  ~x=y
@@ -112,7 +127,7 @@ def readSearch():
     with open(fileName[:-9]+".csv") as f:
         for line in f.read().split("\n"):
             resArray2.append(line.split(","))
-    labels=["logcosh_val","met_MSE_val","metVec_mean_val","jensenShannon_met_val","chisquare_met_val", "purity last bin", "err purity last bin", "purity prelast bin", "err purity prelast bin", "stability last bin", "err stability last bin", "stability prelast bin", "err stability prelast bin"]
+    labels=["loss_val","met_MSE_val","metVec_mean_val","jensenShannon_met_val","chisquare_met_val", "purity last bin", "err purity last bin", "purity prelast bin", "err purity prelast bin", "stability last bin", "err stability last bin", "stability prelast bin", "err stability prelast bin"]
     colors=["b","r","g","orange","purple", "navy", "navy", "cornflowerblue", "cornflowerblue", "darkgreen", "darkgreen", "lawngreen", "lawngreen"]
     values=np.array(resArray[:-1], dtype=float)
     values1=np.array(resArray1[:-1], dtype=float)
@@ -230,25 +245,87 @@ def ConvTojson():
         with open("HyperParameterResuls/HParaLogs/logGrid.json", "a") as f:
             f.write(json.dumps(data)+"\n")
     
-def readnPrint():
+def readnPrint(filename):
     resArray=[]
-    with open("HyperParameterResuls/lrVals/lrV2vals") as f:
-        for line in f.read().split("]\n ["):
-            resArray.append(line.split())
-    resArray=np.array(resArray)
-    resArray[0,0]=resArray[0,0][2:]
-    resArray[-1,-1]=resArray[-1,-1][:-2]
-    resArray=np.array(resArray, dtype=float)
-    np.savetxt("HyperParameterResuls/lrVals/lrValsV2.csv", resArray, delimiter=",")
+    with open(filename) as f:
+        for line in f.read().split("\n"):
+            resArray.append(line.split(","))
+    resArray=np.array(resArray[:-1], dtype=float)[1::2]
+    #  ~print(resArray
+    lowArr = np.where(resArray[:,1]<20, True, False)
+    valStrings=["loss", "logcosh", "MSE", "MSE vectorial", "Jensonshannon", "chisqr"]
+    for col in range(6):
+        #  ~arr=resArray[:,col]
+        arr=resArray[:,col][lowArr][2:]
+        #  ~print(arr)
+        #  ~print(arr)
+        print(valStrings[col]+"\nmean: {:10.5g} +- {:<10.5g} ({:.2g} %)".format(np.mean(arr),np.std(arr), 100*np.std(arr)/np.mean(arr)))
+        #  ~print(r"{:.6g} & {:.2g} & {:.2g}$\%$\\".format(np.mean(arr),np.std(arr),np.std(arr)*100/np.mean(arr)))
+        #  ~print(arr[lowArr])
 
+def readnPrint2(filename):
+    resArray=[]
+    with open(filename) as f:
+        for line in f.read().split("\n"):
+            resArray.append(line.split(","))
+    resArray= (np.array(resArray, dtype=float))
+    for col in range(2):
+        arr=resArray[:,col]
+        print("mean: {:10.5g} +- {:<10.5g} ({:.2g} %)".format(np.mean(arr),np.std(arr), 100*np.std(arr)/np.mean(arr)))
+        #  ~print(r"{:.6g} & {:.2g} & {:.2g}$\%$\\".format(np.mean(arr),np.std(arr),np.std(arr)*100/np.mean(arr)))
+    
 #############################################################
 
 if __name__ == "__main__":
-    pathList = ["LossPlots/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20211021-1421genMETweighted_validation-tag-epoch_loss.csv",
-    "LossPlots/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20211025-1130genMETweighted_validation-tag-epoch_loss.csv"]
-    #  ~plotLoss(pathList)
+    #  ~pathList = ["LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20211021-1421genMETweighted_validation-tag-epoch_loss.csv",
+    #  ~"LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20211025-1130genMETweighted_validation-tag-epoch_loss.csv"]
+    pathList = [
+    "LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220110-1240_train-tag-epoch_logcosh.csv",
+    "LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220110-1240_validation-tag-epoch_logcosh.csv",
+    "LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220110-1529_train-tag-epoch_logcosh.csv",
+    "LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220110-1529_validation-tag-epoch_logcosh.csv",
+    "LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220110-1600genMETweighted_train-tag-epoch_logcosh.csv",
+    "LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220110-1600genMETweighted_validation-tag-epoch_logcosh.csv"
+    ]
+    plotLoss(pathList, "LossPlots/Plotting_test.pdf")
+    #  ~pathList = [
+    #  ~"LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220110-1240_train-tag-epoch_loss.csv",
+    #  ~"LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220110-1240_validation-tag-epoch_loss.csv",
+    #  ~"LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220110-1529_train-tag-epoch_loss.csv",
+    #  ~"LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220110-1529_validation-tag-epoch_loss.csv",
+    #  ~"LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220110-1600genMETweighted_train-tag-epoch_loss.csv",
+    #  ~"LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220110-1600genMETweighted_validation-tag-epoch_loss.csv"
+    #  ~]
+    #  ~plotLoss(pathList, "LossPlots/Loss_Undersampling_Comparison.pdf")
+    #  ~pathList = [
+    #  ~"LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20211221-1219_train-tag-epoch_loss.csv",
+    #  ~"LossPlots/LossLogs/run-Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20211221-1219_validation-tag-epoch_loss.csv"
+    #  ~]
+    #  ~plotLoss(pathList, "LossPlots/Loss_MinimalNoise_Comparison.pdf")
+    #  ~plotLoss(pathList, "Loss_test.pdf")
     #  ~GridSearch()
-    readSearch()
+    #  ~readSearch()
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_100bins.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_HeInit.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_GlorNormInit.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_GlorNormInit_WConstr5.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_GlorNormInit_WConstr2.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_GlorNormInit_v2.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_woGenMetReW.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_logc_GlorNormInit.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_logc_stdv2.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_std_50000" ,"HyperParameterResuls/Fluct_logs/Fluct_std_loss"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_std_100.csv","HyperParameterResuls/Fluct_logs/Fluct_std_50.csv","HyperParameterResuls/Fluct_logs/Fluct_std_25.csv","HyperParameterResuls/Fluct_logs/Fluct_std_10.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_genMETbin_500.csv", "HyperParameterResuls/Fluct_logs/Fluct_genMETbin_100.csv","HyperParameterResuls/Fluct_logs/Fluct_genMETbin_50.csv","HyperParameterResuls/Fluct_logs/Fluct_genMETbin_25.csv","HyperParameterResuls/Fluct_logs/Fluct_genMETbin_10.csv", "HyperParameterResuls/Fluct_logs/Fluct_noGenMETrew.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_logc_stdv2.csv" ,"HyperParameterResuls/Fluct_logs/Fluct_logc_std.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_logc_GlorNormInit_WConstr5.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_logc_GlorNormInit_WConstr2.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_logc_HeNormInit_WConstr5.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_logc_woGenMetReW.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_logc_underSamp.csv"]
+    #  ~filenames=["HyperParameterResuls/Fluct_logs/Fluct_logc_batch50000.csv"]
     #  ~hyperOpt()
-    #  ~readnPrint()
+    #  ~for filename in filenames:
+        #  ~print("\n"+filename.split("/")[-1]+":\n")
+        #  ~readnPrint(filename)
     #  ~ConvTojson()

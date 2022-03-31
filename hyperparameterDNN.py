@@ -154,7 +154,7 @@ def getInputArray_allBins_nomDistr(path,inputVars,targetName,target,update,treeN
 def trainKeras(dataPath,inputVars,name,treeName,targetName,target, lr, dout, lamb, batch, nLayer, nodeFac, alph,updateInput=False,permuationImportance=False,normalize=False,standardize=False,genMETweighted=False):
             
         # set number of epochs and batchsize
-        epochs = 50
+        epochs = 100
         #  ~batch_size = 5000
         batch_size = batch
         
@@ -187,6 +187,7 @@ def trainKeras(dataPath,inputVars,name,treeName,targetName,target, lr, dout, lam
         my_model = KerasRegressor(build_fn=bJetRegression_Model, lr=lr, dout=dout, lamb=lamb, nLayer=nLayer, nodeFac=nodeFac, alph=alph, epochs=epochs, batch_size=batch_size, verbose=2)
         if genMETweighted:
             myHistory = my_model.fit(train_x,train_y,validation_data=(val_x,val_y,val_weights),sample_weight=train_weights,callbacks=[tensorboard_callback])
+            #  ~myHistory = my_model.fit(train_x,train_y,validation_data=(val_x,val_y,val_weights),sample_weight=train_weights)
             #  ~my_model.fit(train_x,train_y,validation_data=(val_x,val_y,np.sqrt(val_weights)),sample_weight=np.sqrt(train_weights),callbacks=[tensorboard_callback])
         else:
             myHistory = my_model.fit(train_x,train_y,validation_data=(val_x,val_y),callbacks=[tensorboard_callback])
@@ -315,7 +316,7 @@ def fit_opt(lr, dout, lamb, batch, nLayer, nodeFac, alph):
     val_MET_mean = trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"], np.exp(lr), dout, np.exp(lamb), int(np.round(np.exp(batch))), int(np.round(nLayer)), nodeFac2, alph,updateInput=True,genMETweighted=True)
     with open("HyperParameterResuls/BayesOptRes.csv", "ab") as f:
         np.savetxt(f, np.array([np.zeros(len(val_MET_mean)), val_MET_mean]), delimiter=",")
-    return val_MET_mean[0]
+    return -val_MET_mean[0]
 
 def hyperOpt():
     #  ~pbounds = {'lr': (1e-5, 1e-3), 'dout':(0.1,0.5), 'lamb':(0.001,0.1)}
@@ -328,18 +329,18 @@ def hyperOpt():
         random_state=3,
     )
     
-    logger = JSONLogger(path="HyperParameterResuls/HParaLogs/logBayesNew1.json", reset=False)
+    load_logs(optimizer, logs=["HyperParameterResuls/HParaLogs/logBayes_C2_3.json"]);
+    logger = JSONLogger(path="HyperParameterResuls/HParaLogs/logBayes_C2_3.json", reset=False)
     optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
     
-    optimizer.probe(
-        params={'lr': np.log(0.0001), 'dout': (0.35), 'lamb': np.log(0.05), 'batch': np.log(5000), 'nLayer': 6, 'nodeFac': 3, 'alph': 0.2},
-        lazy=True,
-    )
+    #  ~optimizer.probe(
+        #  ~params={'lr': np.log(0.0001), 'dout': (0.35), 'lamb': np.log(0.05), 'batch': np.log(5000), 'nLayer': 6, 'nodeFac': 3, 'alph': 0.2},
+        #  ~lazy=True,
+    #  ~)
 
     #  ~load_logs(optimizer, 
     #  ~load_logs(optimizer, logs=["HyperParameterResuls/HParaLogs/logBayes1.json"]);
-    #  ~load_logs(optimizer, logs=["HyperParameterResuls/HParaLogs/logHtest4 (copy 1).json"]);
-    optimizer.maximize(init_points=9, n_iter=60)
+    optimizer.maximize(init_points=0, n_iter=1)
 
 
 
