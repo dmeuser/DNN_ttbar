@@ -12,3 +12,5 @@ RunGOFCondor/Impact_plots/*
 RunGOFCondor/CondorGOFsubmits/*
 RunGOFCondor/HTplots/*
 RunGOFCondor/utilities/*
+BayesOptLogs/*
+__pycache__/*
