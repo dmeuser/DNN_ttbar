@@ -38,20 +38,25 @@ def rmsFUNC(x):
 def meanErr(x):
     return 2*np.std(x)/np.sqrt(len(x))
 
-def getInputArray_allBins_nomDistr(path,inputVars,targetName,target,treeName,update=False,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,cut="(PuppiMET_xy>0)"):
-	
+def getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeName,update=False,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,cut="(PuppiMET_xy>0)",noTrainSplitting=False):
+    # Defining End of binning and binWidth for genMETreweighting
+    binE = 500
     binW = 5
+    if (year=="2016_preVFP" or year=="2016_preVFP"):
+        binE=400
+        binW=8
+        
     appendCount = 0
-    for subList in [target, ["genMET", "PtNuNu", "PtNuNu_phi", "Lep1_phi", "Lep2_phi", "PuppiMET_xy", "PuppiMET_xy_phi", "genMET_phi"]]:      # append target variables to be also read in
+    for subList in [target, ["SF", "genMET", "PtNuNu", "PtNuNu_phi", "Lep1_phi", "Lep2_phi", "PuppiMET_xy", "PuppiMET_xy_phi", "genMET_phi"]]:      # append target variables to be also read in
         for var in subList:
             inputVars.append(var)
             appendCount+=1
 
     
-    if not os.path.exists("input/2018/2D/"):    # create output folder for plots if not available
-        os.makedirs("input/2018/2D/")
+    if not os.path.exists("input/"+year+"/2D/"):    # create output folder for plots if not available
+        os.makedirs("input/"+year+"/2D/")
     
-    outputPath="input/2018/2D/"+treeName+"_"+targetName+"_nomDistr.pkl"     # output path of pkl
+    outputPath="input/"+year+"/2D/"+treeName+"_"+targetName+"_nomDistr.pkl"     # output path of pkl
     
     # option to only use emu events for training (mainly for studies connected to 40 GeV cut)
     if treeName.split("_")[-1]=="emu":
@@ -85,23 +90,32 @@ def getInputArray_allBins_nomDistr(path,inputVars,targetName,target,treeName,upd
         
    
         if genMETweighted:
-            bins=list(range(0,500,binW))
+            bins=list(range(0,binE,binW))
             bins.append(inputFeatures["genMET"].max())
             labels=list(range(1,len(bins)))
             inputFeatures["genMET_binNR"] = pd.cut(inputFeatures["genMET"], bins=bins, labels=labels)
             sampleWeights=compute_sample_weight("balanced",inputFeatures["genMET_binNR"])
+            SF_weights = inputFeatures["SF"]
+            sampleWeights=sampleWeights*SF_weights
         
-        x,y,metVals = inputFeatures[inputVars[:-appendCount]],inputFeatures[target],inputFeatures[inputVars[2-appendCount:]]
+        x,y,metVals = inputFeatures[inputVars[:-appendCount]],inputFeatures[target],inputFeatures[inputVars[-appendCount:]]
         
-        #split MC data in training, validation and test samples, x=inputs, y=targets, metVals=other Variable, that are not inputs e.g. genMET
+        # split MC data in training, validation and test samples, x=inputs, y=targets, metVals=other Variable, that are not inputs e.g. genMET
+        # if noTrainSplitting, almost all statistics are in training sample, only used for plotting
         if genMETweighted:
-            train_x, test_x, train_y, test_y, train_weights, test_weights, train_metVals, test_metVals = train_test_split(x, y, sampleWeights, metVals, random_state=30, test_size=0.2, train_size=0.8)
-            #  ~train_x, train_y, train_weights, train_metVals = x, y, sampleWeights, metVals
-            train_x, val_x, train_y, val_y, train_weights, val_weights, train_metVals, val_metVals = train_test_split(train_x, train_y, train_weights, train_metVals, random_state=30, test_size=0.25, train_size=0.75)
-            #  ~test_x, val_x, test_y, val_y, test_weights, val_weights, test_metVals, val_metVals = train_test_split(x, y, sampleWeights, metVals, random_state=30, test_size=0.01, train_size=0.01)
+            if noTrainSplitting: 
+                train_x, test_x, train_y, test_y, train_weights, test_weights, train_metVals, test_metVals = train_test_split(x, y, sampleWeights, metVals, random_state=30, test_size=0.01, train_size=0.99)
+                train_x, val_x, train_y, val_y, train_weights, val_weights, train_metVals, val_metVals = train_test_split(train_x, train_y, train_weights, train_metVals, random_state=30, test_size=0.01, train_size=0.99)
+            else: 
+                train_x, test_x, train_y, test_y, train_weights, test_weights, train_metVals, test_metVals = train_test_split(x, y, sampleWeights, metVals, random_state=30, test_size=0.2, train_size=0.8)
+                train_x, val_x, train_y, val_y, train_weights, val_weights, train_metVals, val_metVals = train_test_split(train_x, train_y, train_weights, train_metVals, random_state=30, test_size=0.25, train_size=0.75)
         else:
-            train_x, test_x, train_y, test_y, train_metVals, test_metVals = train_test_split(x, y, metVals, random_state=30, test_size=0.2, train_size=0.8)
-            train_x, val_x, train_y, val_y, train_metVals, val_metVals = train_test_split(train_x, train_y, train_metVals, random_state=30, test_size=0.25, train_size=0.75)
+            if noTrainSplitting: 
+                train_x, test_x, train_y, test_y, train_metVals, test_metVals = train_test_split(x, y, metVals, random_state=30, test_size=0.01, train_size=0.99)
+                train_x, val_x, train_y, val_y, train_metVals, val_metVals = train_test_split(train_x, train_y, train_metVals, random_state=30, test_size=0.01, train_size=0.99)
+            else:
+                train_x, test_x, train_y, test_y, train_metVals, test_metVals = train_test_split(x, y, metVals, random_state=30, test_size=0.01, train_size=0.99)
+                train_x, val_x, train_y, val_y, train_metVals, val_metVals = train_test_split(train_x, train_y, train_metVals, random_state=30, test_size=0.01, train_size=0.99)
         
         if standardize:
             train_x_scaler = StandardScaler()
@@ -116,7 +130,7 @@ def getInputArray_allBins_nomDistr(path,inputVars,targetName,target,treeName,upd
             val_y_scaler = StandardScaler()
             val_y = pd.DataFrame(val_y_scaler.fit_transform(val_y.values), index=val_y.index, columns=val_y.columns)
             
-            with open("trainedModel_Keras/2018/2D/"+modelName+"_scalers.csv", "ab") as f:
+            with open("trainedModel_Keras/"+year+"/2D/"+modelName+"_scalers.csv", "ab") as f:
                 for scaler in [train_x_scaler, train_y_scaler, val_x_scaler, val_y_scaler]:
                     np.savetxt(f, scaler.mean_, delimiter=",")
                     np.savetxt(f, scaler.scale_, delimiter=",")
@@ -172,10 +186,8 @@ def getInputArray_allBins_nomDistr(path,inputVars,targetName,target,treeName,upd
 
         elif doSmogn:
             noiseFac=0.001
-            #  ~print("shape before: ", train_x.shape)
             train_x[target[0]] = train_y[target[0]]
             train_x[target[1]] = train_y[target[1]] 
-            #  ~train_x["genMET"] = train_metVals["genMET"]
             bins=list(range(0,500,binW))
             bins.append(train_metVals["genMET"].max())
             labels=list(range(1,len(bins)))
@@ -197,21 +209,14 @@ def getInputArray_allBins_nomDistr(path,inputVars,targetName,target,treeName,upd
                         train_temp = pd.DataFrame()
                         noiseArr = np.random.normal(loc=0, scale=stdVec, size=(nRows, len(stdVec)))
                         for j, noiseArr1 in enumerate(noiseArr.T):
-                            #  ~if j==0: print(df[keyArr[j]], noiseArr, df[keyArr[j]]+noiseArr)
                             train_temp[keyArr[j]] = df[keyArr[j]]+noiseArr1
-                            #  ~train_temp[keyArr[j]] = df[keyArr[j]]
                         train_temp_1 = train_temp_1.append(train_temp, ignore_index=True)
-            #print(train_temp_1[["PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","METunc_Puppi","MET*cos(PFMET_phi)"]])
-            #print(train_x[["PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","METunc_Puppi","MET*cos(PFMET_phi)"]])
-            #train_x = train_x.append(train_temp_1, ignore_index=True)
             train_x = train_temp_1.copy()
-            #print(train_x[["PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","METunc_Puppi","MET*cos(PFMET_phi)"]])
             train_y = pd.DataFrame()
             train_y[target[0]] = train_x[target[0]]
             train_y[target[1]] = train_x[target[1]]
             train_x = train_x.drop([target[0], target[1]], axis="columns")
 
-        #  ~print("############## abort ##################")
         # write dataframes to pkl
         if genMETweighted:
             datafrNames = ["train_x", "val_x", "test_x", "train_y", "val_y", "test_y", "train_metVals", "val_metVals", "test_metVals", "train_weights", "val_weights", "test_weights"] 
@@ -237,28 +242,25 @@ def getInputArray_allBins_nomDistr(path,inputVars,targetName,target,treeName,upd
             train_weights = pd.read_pickle(outputPath[:-4]+"_"+"train_weights"+".pkl")["train_weights"]
             val_weights = pd.read_pickle(outputPath[:-4]+"_"+"val_weights"+".pkl")["val_weights"]
             test_weights = pd.read_pickle(outputPath[:-4]+"_"+"test_weights"+".pkl")["test_weights"]
-        #  ~print(train_metVals.keys())
     
-    #  ~print(inputFeatures, inputFeatures_std, pd.DataFrame(scaler.inverse_transform(inputFeatures_std), index=inputFeatures.index, columns=inputFeatures.columns))
     
     print("Train with:",outputPath)
     print(train_x.keys())
-    #  ~print(inputVars[:-appendCount])
     
     # returns inputs, targets, met variables (and weights if genMETweighting is done) split as 60%/20%/20% in training/validation/test data
     if genMETweighted: return train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals, train_weights, val_weights, test_weights
     else: return train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals
     
     
-def getMETarrays(path,inputVars,modelPath,treeName,targetName,target,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False):
+def getMETarrays(year,path,inputVars,modelPath,treeName,targetName,target,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False):
     
-    if genMETweighted: train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals, _, _, _ = getInputArray_allBins_nomDistr(path,inputVars,targetName,target,treeName,update=True,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn,cut="(PuppiMET_xy>0)&(PtNuNu>0)")
-    else: getInputArray_allBins_nomDistr(path,inputVars,targetName,target,treeName,update=True,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn,cut="(PuppiMET_xy>0)&(PtNuNu>0)")
+    if genMETweighted: train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals, _, _, _ = getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeName,update=True,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn,cut="(PuppiMET_xy>0)&(PtNuNu>0)",noTrainSplitting=True)
+    else: train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals = getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeName,update=True,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn,cut="(PuppiMET_xy>0)&(PtNuNu>0)",noTrainSplitting=True)
 
     model = load_model(modelPath+".h5")
-    print(train_y.keys())
     
-    for (data_x, data_y, data_metVals) in [(train_x, train_y, train_metVals), (val_x, val_y, val_metVals), (test_x, test_y, test_metVals)]:
+    #  ~for (data_x, data_y, data_metVals) in [(train_x, train_y, train_metVals), (val_x, val_y, val_metVals), (test_x, test_y, test_metVals)]:
+    for (data_x, data_y, data_metVals) in [(train_x, train_y, train_metVals)]:
         
         y_hat_data = model.predict(data_x,use_multiprocessing=False)
         
@@ -279,4 +281,5 @@ def getMETarrays(path,inputVars,modelPath,treeName,targetName,target,normalize=F
         
         data_metVals["dPhi_PuppiNearLep"] = np.array([np.abs(data_metVals["PuppiMET_xy_phi"]-data_metVals["Lep1_phi"]), np.abs(2*np.pi-np.abs(data_metVals["PuppiMET_xy_phi"]-data_metVals["Lep1_phi"])),np.abs(data_metVals["PuppiMET_xy_phi"]-data_metVals["Lep2_phi"]),np.abs(2*np.pi-np.abs(data_metVals["PuppiMET_xy_phi"]-data_metVals["Lep2_phi"]))]).min(axis=0)
     
-    return train_metVals, val_metVals, test_metVals
+    #  ~return train_metVals, val_metVals, test_metVals
+    return train_metVals
