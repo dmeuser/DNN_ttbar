@@ -72,11 +72,78 @@ def bJetRegression_Model(lr=0.0001, dout=0.3, lamb=0.05, nLayer=6, nodeFac=1., a
     return model
 
 # function to train model
-def trainKeras(dataPath,inputVars,name,treeName,targetName,target,lr,dout,lamb,batch,nLayer,nodeFac,alph,nInputs,updateInput=False,permuationImportance=False,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False):
+def getInputArray_allBins_nomDistr(path,inputVars,targetName,target,update,treeName,normalize=False,standardize=False,genMETweighted=False):
+	
+    appendCount = 0
+    for subList in [target, ["genMET", "PtNuNu", "PtNuNu_phi", "Lep1_phi", "Lep2_phi", "PuppiMET", "PuppiMET_phi"]]:      # append target variables to be also read in
+        for var in subList:
+            inputVars.append(var)
+            appendCount+=1
+    #  ~for var in target:      # append target variables to be also read in
+        #  ~inputVars.append(var)
+    #  ~inputVars.append("genMET")
+    
+    if not os.path.exists("input/2018/2D/"):    # create output folder for plots if not available
+        os.makedirs("input/2018/2D/")
+    
+    outputPath="input/2018/2D/"+treeName+"_"+targetName+"_nomDistr.pkl"     # output path of pkl
+    
+    
+    
+    # option to only use emu events for training (mainly for studies connected to 40 GeV cut)
+    if treeName.split("_")[-1]=="emu":
+        only_emu=True
+        treeName=treeName.replace("_emu","")
+    else:
+        only_emu=False
+    
+    # rename pkl if input is normalized or standardized
+    if normalize:
+        outputPath=outputPath.replace("_nomDistr","normalized_nomDistr")
+    if standardize:
+        outputPath=outputPath.replace("_nomDistr","standardized_nomDistr")
+    
+    # if update=true new pkl is created from root file (takes much longer than using existing pkl)
+    if update:
+        root_file = uproot.open(path)
+        events = root_file["ttbar_res100.0;1"][treeName+";1"]
+        cut = "(PuppiMET>0)"    # use only events selected by reco selection
+        if only_emu:
+            cut+="&(emu==1)"    # use only emu events if selected
+        inputFeatures = events.arrays(inputVars,cut,library="pd")   # load inputs from rootfile
+        
+        if normalize:   # normalize inputs
+            scaler = MinMaxScaler()
+            scaledFeatures = scaler.fit_transform(inputFeatures.values)
+            inputFeatures = pd.DataFrame(scaledFeatures, index=inputFeatures.index, columns=inputFeatures.columns)
+        elif standardize:   # standardize inputs
+            scaler = StandardScaler()
+            scaledFeatures = scaler.fit_transform(inputFeatures.values)
+            inputFeatures = pd.DataFrame(scaledFeatures, index=inputFeatures.index, columns=inputFeatures.columns)
+        
+        if genMETweighted:
+            bins=list(range(0,500,5))
+            bins.append(inputFeatures["genMET"].max())
+            labels=list(range(1,len(bins)))
+            inputFeatures["genMET_binNR"] = pd.cut(inputFeatures["genMET"], bins=bins, labels=labels)
+            sample_weight=compute_sample_weight("balanced",inputFeatures["genMET_binNR"])
+            inputFeatures["weight"]=sample_weight
+        
+        inputFeatures.to_pickle(outputPath)     # write inputs to pkl
+    else:
+        inputFeatures=pd.read_pickle(outputPath)    # read inputs from existing pkl
+    
+    print("Train with:",outputPath)
+    print(inputVars)
+    # returns nD array of inputs, 2D array of targets and vector of inputNames
+    if genMETweighted: return inputFeatures[inputVars[:-appendCount]],inputFeatures[target],inputVars[:-appendCount],inputFeatures["weight"],inputFeatures[inputVars[2-appendCount:]]
+    else: return inputFeatures[inputVars[:-appendCount]],inputFeatures[target],inputVars[:-appendCount],inputFeatures[inputVars[2-appendCount:]]
+
+# function to train model
+def trainKeras(dataPath,inputVars,name,treeName,targetName,target, lr, dout, lamb, batch, nLayer, nodeFac, alph,updateInput=False,permuationImportance=False,normalize=False,standardize=False,genMETweighted=False):
         
     # set number of epochs and batchsize
-    #  ~epochs = 100
-    epochs = 200
+    epochs = 100
     #  ~batch_size = 5000
     batch_size = batch
     
@@ -85,12 +152,18 @@ def trainKeras(dataPath,inputVars,name,treeName,targetName,target,lr,dout,lamb,b
     modelName=name+"_"+"_"+targetName+"_2018_"+stringStart      # time added to name of trained model 
     
     if genMETweighted:
-        train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals, train_weights, val_weights, test_weights = getInputArray_allBins_nomDistr(dataPath,inputVars,targetName,target,treeName,update=updateInput,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn)
+        x,y,inputVars,sampleWeights,metVals=getInputArray_allBins_nomDistr(dataPath,inputVars,targetName,target,updateInput,treeName,normalize,standardize,genMETweighted)
         modelName+="genMETweighted"
     else:
-        train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals = getInputArray_allBins_nomDistr(dataPath,inputVars,targetName,target,treeName,update=updateInput,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn)
-    
-    print("..........................\n\n", train_x.shape)
+        x,y,inputVars,metVals=getInputArray_allBins_nomDistr(dataPath,inputVars,targetName,target,updateInput,treeName,normalize,standardize,genMETweighted)
+        
+    # split sample to into training and test sample (random_state produces reproducible splitting)
+    if genMETweighted:
+        train_x, test_x, train_y, test_y, train_weights, test_weights, train_metVals, test_metVals = train_test_split(x, y, sampleWeights, metVals, random_state=30, test_size=0.2, train_size=0.8)
+        train_x, val_x, train_y, val_y, train_weights, val_weights, train_metVals, val_metVals = train_test_split(train_x, train_y, train_weights, train_metVals, random_state=30, test_size=0.25, train_size=0.75)
+    else:
+        train_x, test_x, train_y, test_y, train_metVals, test_metVals = train_test_split(x, y, metVals, random_state=30, test_size=0.2, train_size=0.8)
+        train_x, val_x, train_y, val_y, train_metVals, val_metVals = train_test_split(train_x, train_y, train_metVals, random_state=30, test_size=0.25, train_size=0.75)
     
     #  ~es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=5)   # could be used for early stopping of training
     logdir="./logs/2018/2D/"+modelName
@@ -134,7 +207,7 @@ def shapleyValues(dataPath,inputVars,modelPath,treeName,targetName,target,update
     train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals = getInputArray_allBins_nomDistr(dataPath,inputVars,targetName,target,treeName,update=updateInput,underSample=underSample)
     
     # use only n events for deriving shapley values (full statistics takes way too long!)
-    x_test=train_x.sample(n=100000)
+    x_test=train_x.sample(n=10000)
     #  ~x_test=train_x
     x_test=x_test.to_numpy()
     
@@ -166,8 +239,6 @@ def shapleyValues(dataPath,inputVars,modelPath,treeName,targetName,target,update
     figure = plt.gcf()  # get current figure
     shap.summary_plot(shap_values, x_test, plot_type = "bar", feature_names = inputVars[:-1], max_display = max_display, show=False)
     figure.set_size_inches(32, 18)
-    names = ([tex.get_text() for tex in plt.yticks()[1]])
-    print(names[::-1])
     plt.savefig("shap_{0}.pdf".format(modelPath.split("/")[-1]))
 
 # function to derive different control performance plots based on trained model
@@ -239,25 +310,12 @@ def plot_Output(dataPath,inputVars,modelPath,treeName,targetName,target,updateIn
 #############################################################
 if __name__ == "__main__":
     # Define input data path
-    #  ~dataPath="/net/data_cms1b/user/dmeuser/top_analysis/2018/v06/minTrees/100.0/Nominal/TTbar_amcatnlo_merged.root"
-    dataPath="/net/data_cms1b/user/dmeuser/top_analysis/2018/v07/minTrees/100.0/Nominal/TTbar_amcatnlo_merged.root"
+    dataPath="/net/data_cms1b/user/dmeuser/top_analysis/2018/v06/minTrees/100.0/Nominal/TTbar_amcatnlo_merged.root"
 
     # Define Input Variables
     #  ~inputVars1 = ["PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","METunc_Puppi","MET*cos(PFMET_phi)","MET*sin(PFMET_phi)","HT*cos(HT_phi)","HT*sin(HT_phi)","nJets","n_Interactions","Lep1_flavor","Lep2_flavor","Lep1_pt*cos(Lep1_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_eta","Lep1_E","Lep2_pt*cos(Lep2_phi)","Lep2_pt*sin(Lep2_phi)","Lep2_eta","Lep2_E","Jet1_pt*cos(Jet1_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_eta","Jet1_E","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Jet2_eta","Jet2_E","dPhiMETnearJet","dPhiMETfarJet","dPhiMETleadJet","dPhiMETlead2Jet","dPhiMETbJet","dPhiLep1Lep2","dPhiJet1Jet2","METsig","MHT","MT","looseLeptonVeto","dPhiMETnearJet_Puppi","dPhiMETfarJet_Puppi","dPhiMETleadJet_Puppi","dPhiMETlead2Jet_Puppi","dPhiMETbJet_Puppi","dPhiLep1bJet","dPhiLep1Jet1","mLL","CaloMET*cos(CaloMET_phi)","CaloMET*sin(CaloMET_phi)","MT2","vecsum_pT_allJet","vecsum_pT_l1l2_allJet","mass_l1l2_allJet","ratio_vecsumpTlep_vecsumpTjet","mjj",]
-
     #  ~inputVars = ["METunc_Puppi","PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","MET*cos(PFMET_phi)","MET*sin(PFMET_phi)","CaloMET*sin(CaloMET_phi)","CaloMET*cos(CaloMET_phi)","vecsum_pT_allJet*sin(HT_phi)","vecsum_pT_allJet*cos(HT_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_pt*cos(Jet1_phi)","MT2","Lep2_pt*sin(Lep2_phi)","Lep2_pt*cos(Lep2_phi)","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_pt*cos(Lep1_phi)","n_Interactions","dPhiJet1Jet2","dPhiMETnearJet_Puppi","dPhiLep1Jet1","vecsum_pT_allJet","dPhiMETleadJet","nJets","MT","dPhiMETnearJet","Jet2_E","Jet1_eta","dPhiLep1Lep2","mLL","dPhiMETbJet_Puppi","dPhiMETfarJet","Lep2_flavor","vecsum_pT_l1l2_allJet","looseLeptonVeto","Lep2_eta","Lep1_eta","dPhiMETlead2Jet","dPhiMETlead2Jet_Puppi","dPhiMETbJet","dPhiLep1bJet","Lep1_E","Lep1_flavor","ratio_vecsumpTlep_vecsumpTjet","mjj","Lep2_E","dPhiMETfarJet_Puppi","mass_l1l2_allJet","METsig","dPhiMETleadJet_Puppi","Jet2_eta","MHT","Jet1_E","HT"]
-    #  ~inputVars = ["METunc_Puppi","PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","MET*cos(PFMET_phi)","MET*sin(PFMET_phi)","CaloMET*sin(CaloMET_phi)","CaloMET*cos(CaloMET_phi)","vecsum_pT_allJet*sin(HT_phi)","vecsum_pT_allJet*cos(HT_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_pt*cos(Jet1_phi)","MT2","Lep2_pt*sin(Lep2_phi)","Lep2_pt*cos(Lep2_phi)","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_pt*cos(Lep1_phi)","n_Interactions","dPhiJet1Jet2","dPhiMETnearJet_Puppi","dPhiLep1Jet1","vecsum_pT_allJet","dPhiMETleadJet","nJets","MT","dPhiMETnearJet","Jet2_E","Jet1_eta","dPhiLep1Lep2","mLL","dPhiMETbJet_Puppi","dPhiMETfarJet","Lep2_flavor","vecsum_pT_l1l2_allJet","looseLeptonVeto","Lep2_eta","Lep1_eta","dPhiMETlead2Jet","dPhiMETlead2Jet_Puppi","dPhiMETbJet","dPhiLep1bJet","Lep1_E","Lep1_flavor","ratio_vecsumpTlep_vecsumpTjet","mjj","Lep2_E","dPhiMETfarJet_Puppi","mass_l1l2_allJet","METsig","dPhiMETleadJet_Puppi","Jet2_eta","MHT","Jet1_E","HT"]
-    #  ~inputVars = ["METunc_Puppi", "PuppiMET*cos(PuppiMET_phi)", "PuppiMET*sin(PuppiMET_phi)", "MET*cos(PFMET_phi)", "MET*sin(PFMET_phi)", "CaloMET*sin(CaloMET_phi)", "CaloMET*cos(CaloMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "Jet1_pt*sin(Jet1_phi)", "Jet1_pt*cos(Jet1_phi)", "MHT", "mass_l1l2_allJet", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)", "mjj", "n_Interactions", "MT2", "Lep2_pt*sin(Lep2_phi)", "dPhiMETleadJet_Puppi", "Lep2_pt*cos(Lep2_phi)", "HT", "dPhiMETleadJet", "dPhiLep1Jet1", "MT", "Lep1_pt*cos(Lep1_phi)", "vecsum_pT_allJet", "dPhiMETnearJet_Puppi", "vecsum_pT_l1l2_allJet", "nJets", "dPhiMETnearJet", "dPhiJet1Jet2", "Jet2_E", "Lep1_pt*sin(Lep1_phi)", "Jet1_E", "dPhiMETlead2Jet_Puppi", "dPhiLep1Lep2", "Lep1_E", "dPhiMETfarJet", "Jet2_eta", "dPhiMETbJet", "dPhiMETfarJet_Puppi", "mLL", "dPhiMETbJet_Puppi", "Lep2_flavor", "Lep2_E", "Jet1_eta", "Lep1_eta", "dPhiMETlead2Jet", "Lep1_flavor", "dPhiLep1bJet", "Lep2_eta", "METsig", "ratio_vecsumpTlep_vecsumpTjet", "looseLeptonVeto"]
-    #  ~inputVars = ["METunc_Puppi", "PuppiMET*cos(PuppiMET_phi)", "PuppiMET*sin(PuppiMET_phi)", "MET*cos(PFMET_phi)", "MET*sin(PFMET_phi)", "CaloMET", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "Jet1_pt*sin(Jet1_phi)", "Jet1_pt*cos(Jet1_phi)", "MHT", "mass_l1l2_allJet", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)", "mjj", "n_Interactions", "MT2", "Lep2_pt*sin(Lep2_phi)", "dPhiMETleadJet_Puppi", "Lep2_pt*cos(Lep2_phi)", "HT", "dPhiMETleadJet", "dPhiLep1Jet1", "MT", "Lep1_pt*cos(Lep1_phi)", "vecsum_pT_allJet", "dPhiMETnearJet_Puppi", "vecsum_pT_l1l2_allJet", "nJets", "dPhiMETnearJet", "dPhiJet1Jet2", "Jet2_E", "Lep1_pt*sin(Lep1_phi)", "Jet1_E", "dPhiMETlead2Jet_Puppi", "dPhiLep1Lep2", "Lep1_E", "dPhiMETfarJet", "Jet2_eta", "dPhiMETbJet", "dPhiMETfarJet_Puppi", "mLL", "dPhiMETbJet_Puppi", "Lep2_flavor", "Lep2_E", "Jet1_eta", "Lep1_eta", "dPhiMETlead2Jet", "Lep1_flavor", "dPhiLep1bJet", "Lep2_eta", "METsig", "ratio_vecsumpTlep_vecsumpTjet", "looseLeptonVeto"]
-    #  ~inputVars = ["PuppiMET*sin(PuppiMET_phi)", "PuppiMET*cos(PuppiMET_phi)", "MET*sin(PFMET_phi)", "MET*cos(PFMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "CaloMET", "vecsum_pT_allJet", "MT2", "mjj", "nJets", "Jet1_E", "HT", "METunc_Puppi", "n_Interactions", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)", "Lep2_pt*cos(Lep2_phi)", "dPhiMETnearJet_Puppi", "mLL", "dPhiMETleadJet_Puppi", "vecsum_pT_l1l2_allJet", "Jet2_E", "dPhiMETbJet_Puppi", "dPhiMETleadJet", "dPhiMETbJet", "Lep2_pt*sin(Lep2_phi)", "MT", "Lep1_E", "dPhiLep1Jet1", "Lep2_E", "dPhiMETlead2Jet", "dPhiLep1Lep2", "Jet1_eta", "dPhiMETfarJet", "Lep2_eta", "dPhiLep1bJet", "dPhiMETfarJet_Puppi", "dPhiMETnearJet", "dPhiJet1Jet2", "Lep2_flavor", "dPhiMETlead2Jet_Puppi", "Lep1_flavor", "METsig", "Lep1_eta", "Jet2_eta", "looseLeptonVeto", "ratio_vecsumpTlep_vecsumpTjet"]
-    
-    #  ~inputVars = ["PuppiMET*sin(PuppiMET_phi)", "PuppiMET*cos(PuppiMET_phi)", "MET*sin(PFMET_phi)", "MET*cos(PFMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "CaloMET", "vecsum_pT_allJet", "MT2", "mjj", "nJets", "Jet1_E", "HT", "METunc_Puppi"]
-    #  ~inputVars = ["PuppiMET_xy*sin(PuppiMET_xy_phi)", "PuppiMET_xy*cos(PuppiMET_xy_phi)", "MET_xy*sin(MET_xy_phi)", "MET_xy*cos(MET_xy_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "CaloMET", "vecsum_pT_allJet", "MT2", "mjj", "nJets", "Jet1_E", "HT", "METunc_Puppi"]
-    #  ~inputVars = ["PuppiMET*sin(PuppiMET_phi)", "PuppiMET*cos(PuppiMET_phi)", "MET*sin(PFMET_phi)", "MET*cos(PFMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "CaloMET", "vecsum_pT_allJet", "mjj", "Jet1_E"]
-    inputVars = ["PuppiMET_xy*sin(PuppiMET_xy_phi)", "PuppiMET_xy*cos(PuppiMET_xy_phi)", "MET_xy*sin(MET_xy_phi)", "MET_xy*cos(MET_xy_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "CaloMET", "vecsum_pT_allJet", "mjj", "Jet1_E"]
-	#  ~out: MT2, HT(?), nJets, METunc_Puppi
-    
-    #  ~inputVars = ["PuppiMET*cos(PuppiMET_phi)", "PuppiMET*sin(PuppiMET_phi)", "MET*cos(PFMET_phi)", "MET*sin(PFMET_phi)", "CaloMET*sin(CaloMET_phi)", "CaloMET*cos(CaloMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "Jet1_pt*sin(Jet1_phi)", "Jet1_pt*cos(Jet1_phi)", "MHT", "mass_l1l2_allJet", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)", "mjj", "n_Interactions", "METunc_Puppi", "MT2", "Lep2_pt*sin(Lep2_phi)", "dPhiMETleadJet_Puppi", "Lep2_pt*cos(Lep2_phi)"]
+    inputVars = ["METunc_Puppi","PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","MET*cos(PFMET_phi)","MET*sin(PFMET_phi)","CaloMET","vecsum_pT_allJet*sin(HT_phi)","vecsum_pT_allJet*cos(HT_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_pt*cos(Jet1_phi)","MT2","Lep2_pt*sin(Lep2_phi)","Lep2_pt*cos(Lep2_phi)","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_pt*cos(Lep1_phi)","n_Interactions","dPhiJet1Jet2","dPhiMETnearJet_Puppi","dPhiLep1Jet1","vecsum_pT_allJet","dPhiMETleadJet","nJets","MT","dPhiMETnearJet","Jet2_E","Jet1_eta","dPhiLep1Lep2","mLL","dPhiMETbJet_Puppi","dPhiMETfarJet","Lep2_flavor","vecsum_pT_l1l2_allJet","looseLeptonVeto","Lep2_eta","Lep1_eta","dPhiMETlead2Jet","dPhiMETlead2Jet_Puppi","dPhiMETbJet","dPhiLep1bJet","Lep1_E","Lep1_flavor","ratio_vecsumpTlep_vecsumpTjet","mjj","Lep2_E","dPhiMETfarJet_Puppi","mass_l1l2_allJet","METsig","dPhiMETleadJet_Puppi","Jet2_eta","MHT","Jet1_E","HT"]
     #  ~print(len(inputVars1), len(inputVars))
     #  ~print(np.where(np.unique(np.array(inputVars))==np.unique(np.array(inputVars1))))
     #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True,genMETweighted=True)
@@ -274,15 +332,15 @@ if __name__ == "__main__":
     nodeFac2 = nodeFacs[int(np.round(nodeFac))]
     print("lr: ", np.exp(lr),"dout: ", dout, "lamb: ", np.exp(lamb), "batch_size: ",  int(np.round(np.exp(batch))), "nlayer: ", int(np.round(nLayer)), "nodes: ", nodeFac2, "alpha: ", alph)
     
-    #  ~nInputs=11
-    nInputs=int(len(inputVars))
-    #  ~nInputs=21
+    #  ~nInputs=57
+    #  ~nInputs=int(len(inputVars))
+    nInputs = 21
     print("Number of inputs: {}".format(nInputs))
     
-    trainKeras(dataPath,inputVars[:nInputs],"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],np.exp(lr),dout,np.exp(lamb),int(np.round(np.exp(batch))),int(np.round(nLayer)),nodeFac2,alph,nInputs,updateInput=True,genMETweighted=True,standardize=False,overSample=False,underSample=False,doSmogn=False)
-    #  ~trainKeras(dataPath,inputVars[:nInputs],"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],np.exp(lr),dout,np.exp(lamb),int(np.round(np.exp(batch))),int(np.round(nLayer)),nodeFac2,alph,nInputs,updateInput=True,genMETweighted=False,standardize=False,overSample=False,underSample=False,doSmogn=False)
+    #  ~trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],np.exp(lr),dout,np.exp(lamb),int(np.round(np.exp(batch))),int(np.round(nLayer)),nodeFac2,alph,nInputs,updateInput=True,genMETweighted=True,standardize=False,overSample=False,underSample=False,doSmogn=False)
+    trainKeras(dataPath,inputVars,"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"], np.exp(lr), dout, np.exp(lamb), int(np.round(np.exp(batch))), int(np.round(nLayer)), nodeFac2, alph,updateInput=True,genMETweighted=True)
     
-    #  ~shapleyValues(dataPath,inputVars[:nInputs],"trainedModel_Keras/2018/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220317-1151genMETweighted","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True)
+    #  ~shapleyValues(dataPath,inputVars,"trainedModel_Keras/2018/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220207-1447genMETweighted","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=False)
     
     #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_/home/home4/institut_1b/nattland/DNN_ttbar/outputComparison/2018/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20211214-1022","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=False,genMETweighted=False,standardize=False, overSample=False)
     #  ~plot_Output(dataPath,inputVars,"trainedModel_Keras/2018/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20211122-1150genMETweighted","TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],updateInput=True,genMETweighted=True,standardize=False,overSample=False,doSmogn=False)

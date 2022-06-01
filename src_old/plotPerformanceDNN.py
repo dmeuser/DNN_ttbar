@@ -91,7 +91,7 @@ def get_inputs(dataPath,inputVars,modelPath,treeName,targetName,target,updateInp
     train_x["DNN_2"]=[row[1] for row in y_hat_train]
     train_x[target[0]]=train_y[target[0]]
     train_x[target[1]]=train_y[target[1]]
-    train_x["PuppiMET_xy_phi"]=train_metVals["PuppiMET_xy_phi"]
+    train_x["PuppiMET_phi"]=train_metVals["PuppiMET_phi"]
     train_x["genMET_phi"]=train_metVals["genMET_phi"]
     
     #  ~train_x.to_pickle("outputComparison/2018/2D/"+modelPath.split("/")[-1]+"/trainResults.pkl")
@@ -100,7 +100,7 @@ def get_inputs(dataPath,inputVars,modelPath,treeName,targetName,target,updateInp
     val_x["DNN_2"]=[row[1] for row in y_hat_val]
     val_x[target[0]]=val_y[target[0]]
     val_x[target[1]]=val_y[target[1]]
-    val_x["PuppiMET_xy_phi"]=val_metVals["PuppiMET_xy_phi"]
+    val_x["PuppiMET_phi"]=val_metVals["PuppiMET_phi"]
     val_x["genMET_phi"]=val_metVals["genMET_phi"]
     
     #  ~val_x.to_pickle("outputComparison/2018/2D/"+modelPath.split("/")[-1]+"/valResults.pkl")
@@ -109,7 +109,7 @@ def get_inputs(dataPath,inputVars,modelPath,treeName,targetName,target,updateInp
     test_x["DNN_2"]=[row[1] for row in y_hat_test]
     test_x[target[0]]=test_y[target[0]]
     test_x[target[1]]=test_y[target[1]]
-    test_x["PuppiMET_xy_phi"]=test_metVals["PuppiMET_xy_phi"]
+    test_x["PuppiMET_phi"]=test_metVals["PuppiMET_phi"]
     test_x["genMET_phi"]=test_metVals["genMET_phi"]
     
     #  ~test_x.to_pickle("outputComparison/2018/2D/"+modelPath.split("/")[-1]+"/testResults.pkl")
@@ -133,11 +133,11 @@ def print_targets(dataPath,inputVars,modelPath,treeName,targetName,target,title,
     #  ~return "haha"
     
     for i_sample,data_x in enumerate([train_x, val_x, test_x]):
-        #  ~data_x["DNN_MET_X"]=data_x["PuppiMET_xy*cos(PuppiMET_xy_phi)"]-data_x["DNN_1"]
-        #  ~data_x["DNN_MET_Y"]=data_x["PuppiMET_xy*sin(PuppiMET_xy_phi)"]-data_x["DNN_2"]
+        #  ~data_x["DNN_MET_X"]=data_x["PuppiMET*cos(PuppiMET_phi)"]-data_x["DNN_1"]
+        #  ~data_x["DNN_MET_Y"]=data_x["PuppiMET*sin(PuppiMET_phi)"]-data_x["DNN_2"]
         #  ~data_x["DNN_MET"]=np.sqrt(data_x["DNN_MET_X"]**2+data_x["DNN_MET_Y"]**2)
-        #  ~data_x["genMET_X"]=data_x["PuppiMET_xy*cos(PuppiMET_xy_phi)"]-data_x[target[0]]
-        #  ~data_x["genMET_Y"]=data_x["PuppiMET_xy*sin(PuppiMET_xy_phi)"]-data_x[target[1]]
+        #  ~data_x["genMET_X"]=data_x["PuppiMET*cos(PuppiMET_phi)"]-data_x[target[0]]
+        #  ~data_x["genMET_Y"]=data_x["PuppiMET*sin(PuppiMET_phi)"]-data_x[target[1]]
         #  ~data_x["genMET"]=np.sqrt(data_x["genMET_X"]**2+data_x["genMET_Y"]**2)
         
         y_pred = [data_x["DNN_1"], data_x["DNN_2"]]
@@ -182,7 +182,7 @@ def plot_Output(dataPath,inputVars,modelPath,treeName,targetName,target,title,mo
         # Compare DNN and target - training sample
         plt.figure()
         plt.suptitle(title, fontsize=12, ha="left", x=0.1, y=0.99)
-        data_x[["PuppiMET_xy*cos(PuppiMET_xy_phi)","PuppiMET_xy*sin(PuppiMET_xy_phi)"]].plot.hist(alpha=0.5,bins=500,density=True)
+        data_x[["PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)"]].plot.hist(alpha=0.5,bins=500,density=True)
         plt.tight_layout(pad=0.1)
         plt.savefig("outputComparison/2018/2D/"+modelPath.split("/")[-1]+"/"+sampleNames[i_sample]+"_Puppi_xy_"+str(modelNr)+".pdf")
         
@@ -199,8 +199,8 @@ def plot_Output(dataPath,inputVars,modelPath,treeName,targetName,target,title,mo
 
         
         # Compare corrected MET to genMET X - training sample
-        data_x["genMET_X"]=data_x["PuppiMET_xy*cos(PuppiMET_xy_phi)"]-data_x[target[0]]
-        data_x["DNN_MET_X"]=data_x["PuppiMET_xy*cos(PuppiMET_xy_phi)"]-data_x["DNN_1"]
+        data_x["genMET_X"]=data_x["PuppiMET*cos(PuppiMET_phi)"]-data_x[target[0]]
+        data_x["DNN_MET_X"]=data_x["PuppiMET*cos(PuppiMET_phi)"]-data_x["DNN_1"]
         
         min=data_x["genMET_X"].min()
         max=data_x["genMET_X"].max()
@@ -213,8 +213,8 @@ def plot_Output(dataPath,inputVars,modelPath,treeName,targetName,target,title,mo
         plt.savefig("outputComparison/2018/2D/"+modelPath.split("/")[-1]+"/METdistr_x_"+sampleNames[i_sample]+"_"+str(modelNr)+".pdf")
         
         # Compare corrected MET to genMET Y - training sample
-        data_x["genMET_Y"]=data_x["PuppiMET_xy*sin(PuppiMET_xy_phi)"]-data_x[target[1]]
-        data_x["DNN_MET_Y"]=data_x["PuppiMET_xy*sin(PuppiMET_xy_phi)"]-data_x["DNN_2"]
+        data_x["genMET_Y"]=data_x["PuppiMET*sin(PuppiMET_phi)"]-data_x[target[1]]
+        data_x["DNN_MET_Y"]=data_x["PuppiMET*sin(PuppiMET_phi)"]-data_x["DNN_2"]
         
         min=data_x["genMET_Y"].min()
         max=data_x["genMET_Y"].max()
@@ -262,18 +262,18 @@ def plot_Output(dataPath,inputVars,modelPath,treeName,targetName,target,title,mo
         dPhi_DNN_gen_arr = np.array([(np.arctan2(data_x["DNN_MET_Y"],data_x["DNN_MET_X"])-data_x["genMET_phi"]), (2*np.pi+np.abs(np.arctan2(data_x["DNN_MET_Y"],data_x["DNN_MET_X"])-data_x["genMET_phi"])), (-2*np.pi+np.abs(np.arctan2(data_x["DNN_MET_Y"],data_x["DNN_MET_X"])-data_x["genMET_phi"]))])
         data_x["dPhi_DNN_gen"] = dPhi_DNN_gen_arr.flatten()[np.arange(np.shape(dPhi_DNN_gen_arr)[1]) + np.abs(dPhi_DNN_gen_arr).argmin(axis=0)*dPhi_DNN_gen_arr.shape[1]]
         
-        dPhi_Puppi_gen_arr = np.array([(data_x["PuppiMET_xy_phi"]-data_x["genMET_phi"]), (2*np.pi+(data_x["PuppiMET_xy_phi"]-data_x["genMET_phi"])), (-2*np.pi+(data_x["PuppiMET_xy_phi"]-data_x["genMET_phi"]))])
+        dPhi_Puppi_gen_arr = np.array([(data_x["PuppiMET_phi"]-data_x["genMET_phi"]), (2*np.pi+(data_x["PuppiMET_phi"]-data_x["genMET_phi"])), (-2*np.pi+(data_x["PuppiMET_phi"]-data_x["genMET_phi"]))])
         data_x["dPhi_Puppi_gen"] = dPhi_Puppi_gen_arr.flatten()[np.arange(np.shape(dPhi_Puppi_gen_arr)[1]) + np.abs(dPhi_Puppi_gen_arr).argmin(axis=0)*dPhi_Puppi_gen_arr.shape[1]]
         #  ~data_x["dPhi_Puppi_gen"] = data_x["Phi_recPuppi"]-data_x["Phi_gen"]
         #  ~data_x["dPhi_Puppi_gen"] = data_x["Phi_gen"]
         
         for i,train_temp in enumerate([data_x, data_x[data_x["genMET"]>=200], data_x[data_x["genMET"]<200]]):
             # Compare resolution for corrected MET and Puppi - trainidation
-            train_temp["PuppiMET_xy"]=np.sqrt(train_temp["PuppiMET_xy*cos(PuppiMET_xy_phi)"]**2+train_temp["PuppiMET_xy*sin(PuppiMET_xy_phi)"]**2)
-            train_temp["genMET-PuppiMET_xy"]=train_temp["genMET"]-train_temp["PuppiMET_xy"]
+            train_temp["PuppiMET"]=np.sqrt(train_temp["PuppiMET*cos(PuppiMET_phi)"]**2+train_temp["PuppiMET*sin(PuppiMET_phi)"]**2)
+            train_temp["genMET-PuppiMET"]=train_temp["genMET"]-train_temp["PuppiMET"]
             train_temp["genMET-DNN_MET"]=train_temp["genMET"]-train_temp["DNN_MET"]
-            #  ~puppiMeanTrain = "Mean Puppi: {:.2f}\nStd Puppi: {:.2f}\nMean DNN: {:.2f}\nStd DNN: {:.2f}".format(train_temp["genMET-PuppiMET_xy"].mean(), rmsFUNC(train_temp["genMET-PuppiMET_xy"]), train_temp["genMET-DNN_MET"].mean(), rmsFUNC(train_temp["genMET-DNN_MET"]))
-            plotStats = "Mean Puppi: {:.2f}\nStd Puppi: {:.2f}\nMean DNN: {:.2f}\nStd DNN: {:.2f}".format(train_temp["genMET-PuppiMET_xy"].mean(), train_temp["genMET-PuppiMET_xy"].std(), train_temp["genMET-DNN_MET"].mean(), train_temp["genMET-DNN_MET"].std())
+            #  ~puppiMeanTrain = "Mean Puppi: {:.2f}\nStd Puppi: {:.2f}\nMean DNN: {:.2f}\nStd DNN: {:.2f}".format(train_temp["genMET-PuppiMET"].mean(), rmsFUNC(train_temp["genMET-PuppiMET"]), train_temp["genMET-DNN_MET"].mean(), rmsFUNC(train_temp["genMET-DNN_MET"]))
+            plotStats = "Mean Puppi: {:.2f}\nStd Puppi: {:.2f}\nMean DNN: {:.2f}\nStd DNN: {:.2f}".format(train_temp["genMET-PuppiMET"].mean(), train_temp["genMET-PuppiMET"].std(), train_temp["genMET-DNN_MET"].mean(), train_temp["genMET-DNN_MET"].std())
             #  ~print("\n############\n\n")
             #  ~print(data_x["dPhi_DNN_gen"][:30], data_x["dPhi_Puppi_gen"][:30])
             #  ~print(puppiMeanTrain)
@@ -282,7 +282,7 @@ def plot_Output(dataPath,inputVars,modelPath,treeName,targetName,target,title,mo
             plt.figure()
             #  ~plt.suptitle("genMET "+split_str[i]+"\n"+title, fontsize=10, ha="left", x=0.1, y=0.99)
             train_temp["genMET-DNN_MET"].plot.hist(alpha=0.5,bins=500,range=(min_x,max_x),density=False,label="DNN", color="b")
-            train_temp["genMET-PuppiMET_xy"].plot.hist(alpha=0.5,bins=500,range=(min_x,max_x),density=False,label="Puppi", color="r")
+            train_temp["genMET-PuppiMET"].plot.hist(alpha=0.5,bins=500,range=(min_x,max_x),density=False,label="Puppi", color="r")
             plt.text(-148, 0.8*plt.gca().get_ylim()[1], plotStats, bbox={"facecolor":"none", "pad":5})
             plt.axvline(0, color="black", linewidth=1)
             plt.xlabel("genMET-recoMET [GeV]")
@@ -323,7 +323,7 @@ def plot_Output(dataPath,inputVars,modelPath,treeName,targetName,target,title,mo
         binsMET = np.linspace(0,400,21)
         data_x["bin"] = np.digitize(data_x["genMET"],bins=binsMET)
         res_DNN_MET = data_x.groupby("bin")["genMET-DNN_MET"].agg(["mean",rmsFUNC,meanErr])
-        res_PuppiMET_xy = data_x.groupby("bin")["genMET-PuppiMET_xy"].agg(["mean",rmsFUNC,meanErr])
+        res_PuppiMET = data_x.groupby("bin")["genMET-PuppiMET"].agg(["mean",rmsFUNC,meanErr])
         res_DNN_MET["metBins"] = binsMET
         plt.figure()
         #  ~plt.suptitle(title, fontsize=10, ha="left", x=0.1, y=0.99)
@@ -331,9 +331,9 @@ def plot_Output(dataPath,inputVars,modelPath,treeName,targetName,target,title,mo
         plt.errorbar(binsMET, res_DNN_MET["mean"], yerr=res_DNN_MET["meanErr"], color="b", label=None, ls="none", capsize=3)
         plt.step(binsMET, res_DNN_MET["mean"], color="b", linewidth=1, where="mid", label="DNN mean")
         plt.step(binsMET, res_DNN_MET["rmsFUNC"], color="b", linewidth=1, where="mid", linestyle="--", label="DNN rms")
-        plt.errorbar(binsMET, res_PuppiMET_xy["mean"], yerr=res_PuppiMET_xy["meanErr"], color="r", label=None, ls="none", capsize=3)
-        plt.step(binsMET, res_PuppiMET_xy["mean"], color="r", linewidth=1, where="mid", label="Puppi mean")
-        plt.step(binsMET, res_PuppiMET_xy["rmsFUNC"], color="r", linewidth=1, where="mid", linestyle="--", label="Puppi rms")
+        plt.errorbar(binsMET, res_PuppiMET["mean"], yerr=res_PuppiMET["meanErr"], color="r", label=None, ls="none", capsize=3)
+        plt.step(binsMET, res_PuppiMET["mean"], color="r", linewidth=1, where="mid", label="Puppi mean")
+        plt.step(binsMET, res_PuppiMET["rmsFUNC"], color="r", linewidth=1, where="mid", linestyle="--", label="Puppi rms")
         plt.ylabel("genMET-recoMET (GeV)")
         plt.xlabel("genMET (GeV)")
         plt.grid()
@@ -385,7 +385,7 @@ def plot_Purity(dataPath,inputVars,modelPath,treeName,targetName,target,title,mo
         met_reco_DNN = np.clip(data_metVals["DNN_MET"], metBins[0], metBins[-1])
         dphi_reco_DNN = data_metVals["DNN_dPhiMetNearLep"]
 
-        met_reco_Puppi = np.clip(data_metVals["PuppiMET_xy"], metBins[0], metBins[-1])
+        met_reco_Puppi = np.clip(data_metVals["PuppiMET"], metBins[0], metBins[-1])
         dphi_reco_Puppi = data_metVals["dPhi_PuppiNearLep"]
         
         for (met_reco, dphi_reco, dnnName) in [(met_reco_DNN, dphi_reco_DNN, "DNN",), (met_reco_Puppi, dphi_reco_Puppi, "Puppi")]:
@@ -489,16 +489,16 @@ if __name__ == "__main__":
     #  ~dataPath="/net/data_cms1b/user/dmeuser/top_analysis/2018/v06/minTrees/100.0/Nominal/TTbar_diLepton_merged.root"
 
     # Define Input Variables
-    #  ~inputVars1 = ["PuppiMET_xy*cos(PuppiMET_xy_phi)","PuppiMET_xy*sin(PuppiMET_xy_phi)","METunc_Puppi","MET*cos(PFMET_phi)","MET*sin(PFMET_phi)","HT*cos(HT_phi)","HT*sin(HT_phi)","nJets","n_Interactions","Lep1_flavor","Lep2_flavor","Lep1_pt*cos(Lep1_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_eta","Lep1_E","Lep2_pt*cos(Lep2_phi)","Lep2_pt*sin(Lep2_phi)","Lep2_eta","Lep2_E","Jet1_pt*cos(Jet1_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_eta","Jet1_E","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Jet2_eta","Jet2_E","dPhiMETnearJet","dPhiMETfarJet","dPhiMETleadJet","dPhiMETlead2Jet","dPhiMETbJet","dPhiLep1Lep2","dPhiJet1Jet2","METsig","MHT","MT","looseLeptonVeto","dPhiMETnearJet_Puppi","dPhiMETfarJet_Puppi","dPhiMETleadJet_Puppi","dPhiMETlead2Jet_Puppi","dPhiMETbJet_Puppi","dPhiLep1bJet","dPhiLep1Jet1","mLL","CaloMET*cos(CaloMET_phi)","CaloMET*sin(CaloMET_phi)","MT2","vecsum_pT_allJet","vecsum_pT_l1l2_allJet","mass_l1l2_allJet","ratio_vecsumpTlep_vecsumpTjet","mjj"]
+    #  ~inputVars1 = ["PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","METunc_Puppi","MET*cos(PFMET_phi)","MET*sin(PFMET_phi)","HT*cos(HT_phi)","HT*sin(HT_phi)","nJets","n_Interactions","Lep1_flavor","Lep2_flavor","Lep1_pt*cos(Lep1_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_eta","Lep1_E","Lep2_pt*cos(Lep2_phi)","Lep2_pt*sin(Lep2_phi)","Lep2_eta","Lep2_E","Jet1_pt*cos(Jet1_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_eta","Jet1_E","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Jet2_eta","Jet2_E","dPhiMETnearJet","dPhiMETfarJet","dPhiMETleadJet","dPhiMETlead2Jet","dPhiMETbJet","dPhiLep1Lep2","dPhiJet1Jet2","METsig","MHT","MT","looseLeptonVeto","dPhiMETnearJet_Puppi","dPhiMETfarJet_Puppi","dPhiMETleadJet_Puppi","dPhiMETlead2Jet_Puppi","dPhiMETbJet_Puppi","dPhiLep1bJet","dPhiLep1Jet1","mLL","CaloMET*cos(CaloMET_phi)","CaloMET*sin(CaloMET_phi)","MT2","vecsum_pT_allJet","vecsum_pT_l1l2_allJet","mass_l1l2_allJet","ratio_vecsumpTlep_vecsumpTjet","mjj"]
     
-    #  ~inputVars = ["vecsum_pT_allJet*sin(HT_phi)","vecsum_pT_allJet*cos(HT_phi)","PuppiMET_xy*sin(PuppiMET_xy_phi)","PuppiMET_xy*cos(PuppiMET_xy_phi)","MET*sin(PFMET_phi)","MET*cos(PFMET_phi)","CaloMET*sin(CaloMET_phi)","CaloMET*cos(CaloMET_phi)","HT*cos(HT_phi)","HT*sin(HT_phi)","Jet1_pt*sin(Jet1_phi)","dPhiMETnearJet_Puppi","Lep2_pt*sin(Lep2_phi)","n_Interactions","dPhiMETnearJet","Lep1_pt*sin(Lep1_phi)", "Lep2_pt*cos(Lep2_phi)","dPhiLep1Jet1","dPhiLep1Lep2","Jet2_pt*cos(Jet2_phi)","vecsum_pT_l1l2_allJet","MT2","METunc_Puppi","dPhiMETfarJet_Puppi","dPhiMETfarJet","nJets","mLL","Jet2_eta","dPhiMETleadJet_Puppi","Lep1_eta","dPhiJet1Jet2","Jet1_eta","Jet1_pt*cos(Jet1_phi)","dPhiMETleadJet","Lep1_pt*cos(Lep1_phi)","Jet2_E","Lep1_flavor","MT","dPhiMETbJet_Puppi","Lep2_flavor","Lep1_E","Lep2_E","mjj","Lep2_eta","dPhiMETlead2Jet_Puppi","METsig","vecsum_pT_allJet","Jet2_pt*sin(Jet2_phi)","Jet1_E","dPhiMETbJet","MHT","dPhiMETlead2Jet","mass_l1l2_allJet","dPhiLep1bJet","ratio_vecsumpTlep_vecsumpTjet","looseLeptonVeto"]
-    #  ~inputVars = ["METunc_Puppi","PuppiMET_xy*cos(PuppiMET_xy_phi)","PuppiMET_xy*sin(PuppiMET_xy_phi)","MET*cos(PFMET_phi)","MET*sin(PFMET_phi)","CaloMET*sin(CaloMET_phi)","CaloMET*cos(CaloMET_phi)","vecsum_pT_allJet*sin(HT_phi)","vecsum_pT_allJet*cos(HT_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_pt*cos(Jet1_phi)","MT2","Lep2_pt*sin(Lep2_phi)","Lep2_pt*cos(Lep2_phi)","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_pt*cos(Lep1_phi)","n_Interactions","dPhiJet1Jet2","dPhiMETnearJet_Puppi","dPhiLep1Jet1","vecsum_pT_allJet","dPhiMETleadJet","nJets","MT","dPhiMETnearJet","Jet2_E","Jet1_eta","dPhiLep1Lep2","mLL","dPhiMETbJet_Puppi","dPhiMETfarJet","Lep2_flavor","vecsum_pT_l1l2_allJet","looseLeptonVeto","Lep2_eta","Lep1_eta","dPhiMETlead2Jet","dPhiMETlead2Jet_Puppi","dPhiMETbJet","dPhiLep1bJet","Lep1_E","Lep1_flavor","ratio_vecsumpTlep_vecsumpTjet","mjj","Lep2_E","dPhiMETfarJet_Puppi","mass_l1l2_allJet","METsig","dPhiMETleadJet_Puppi","Jet2_eta","MHT","Jet1_E","HT"]
-    #  ~inputVars = ["METunc_Puppi", "PuppiMET_xy*cos(PuppiMET_xy_phi)", "PuppiMET_xy*sin(PuppiMET_xy_phi)", "MET*cos(PFMET_phi)", "MET*sin(PFMET_phi)", "CaloMET*sin(CaloMET_phi)", "CaloMET*cos(CaloMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "Jet1_pt*sin(Jet1_phi)", "Jet1_pt*cos(Jet1_phi)", "MHT", "mass_l1l2_allJet", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)", "mjj", "n_Interactions", "MT2", "Lep2_pt*sin(Lep2_phi)", "dPhiMETleadJet_Puppi", "Lep2_pt*cos(Lep2_phi)", "HT", "dPhiMETleadJet", "dPhiLep1Jet1", "MT", "Lep1_pt*cos(Lep1_phi)", "vecsum_pT_allJet", "dPhiMETnearJet_Puppi", "vecsum_pT_l1l2_allJet", "nJets", "dPhiMETnearJet", "dPhiJet1Jet2", "Jet2_E", "Lep1_pt*sin(Lep1_phi)", "Jet1_E", "dPhiMETlead2Jet_Puppi", "dPhiLep1Lep2", "Lep1_E", "dPhiMETfarJet", "Jet2_eta", "dPhiMETbJet", "dPhiMETfarJet_Puppi", "mLL", "dPhiMETbJet_Puppi", "Lep2_flavor", "Lep2_E", "Jet1_eta", "Lep1_eta", "dPhiMETlead2Jet", "Lep1_flavor", "dPhiLep1bJet", "Lep2_eta", "METsig", "ratio_vecsumpTlep_vecsumpTjet", "looseLeptonVeto"]
-    #  ~inputVars = ["METunc_Puppi", "PuppiMET_xy*cos(PuppiMET_xy_phi)", "PuppiMET_xy*sin(PuppiMET_xy_phi)", "MET*cos(PFMET_phi)", "MET*sin(PFMET_phi)", "CaloMET*sin(CaloMET_phi)", "CaloMET*cos(CaloMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "Jet1_pt*sin(Jet1_phi)", "Jet1_pt*cos(Jet1_phi)", "MHT", "mass_l1l2_allJet", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)", "mjj", "n_Interactions", "MT2", "Lep2_pt*sin(Lep2_phi)", "dPhiMETleadJet_Puppi", "Lep2_pt*cos(Lep2_phi)", "HT", "dPhiMETleadJet", "dPhiLep1Jet1", "MT", "Lep1_pt*cos(Lep1_phi)", "vecsum_pT_allJet", "dPhiMETnearJet_Puppi", "vecsum_pT_l1l2_allJet", "nJets", "dPhiMETnearJet", "dPhiJet1Jet2", "Jet2_E", "Lep1_pt*sin(Lep1_phi)", "Jet1_E", "dPhiMETlead2Jet_Puppi", "dPhiLep1Lep2", "Lep1_E", "dPhiMETfarJet", "Jet2_eta", "dPhiMETbJet", "dPhiMETfarJet_Puppi", "mLL", "dPhiMETbJet_Puppi", "Lep2_flavor", "Lep2_E", "Jet1_eta", "Lep1_eta", "dPhiMETlead2Jet", "Lep1_flavor", "dPhiLep1bJet", "Lep2_eta", "METsig", "ratio_vecsumpTlep_vecsumpTjet", "looseLeptonVeto"]
-    #  ~inputVars = ["METunc_Puppi", "PuppiMET_xy*cos(PuppiMET_xy_phi)", "PuppiMET_xy*sin(PuppiMET_xy_phi)", "MET*cos(PFMET_phi)", "MET*sin(PFMET_phi)", "CaloMET", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "Jet1_pt*sin(Jet1_phi)", "Jet1_pt*cos(Jet1_phi)", "MHT", "mass_l1l2_allJet", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)", "mjj", "n_Interactions", "MT2", "Lep2_pt*sin(Lep2_phi)", "dPhiMETleadJet_Puppi", "Lep2_pt*cos(Lep2_phi)", "HT", "dPhiMETleadJet", "dPhiLep1Jet1", "MT", "Lep1_pt*cos(Lep1_phi)", "vecsum_pT_allJet", "dPhiMETnearJet_Puppi", "vecsum_pT_l1l2_allJet", "nJets", "dPhiMETnearJet", "dPhiJet1Jet2", "Jet2_E", "Lep1_pt*sin(Lep1_phi)", "Jet1_E", "dPhiMETlead2Jet_Puppi", "dPhiLep1Lep2", "Lep1_E", "dPhiMETfarJet", "Jet2_eta", "dPhiMETbJet", "dPhiMETfarJet_Puppi", "mLL", "dPhiMETbJet_Puppi", "Lep2_flavor", "Lep2_E", "Jet1_eta", "Lep1_eta", "dPhiMETlead2Jet", "Lep1_flavor", "dPhiLep1bJet", "Lep2_eta", "METsig", "ratio_vecsumpTlep_vecsumpTjet", "looseLeptonVeto"]
+    #  ~inputVars = ["vecsum_pT_allJet*sin(HT_phi)","vecsum_pT_allJet*cos(HT_phi)","PuppiMET*sin(PuppiMET_phi)","PuppiMET*cos(PuppiMET_phi)","MET*sin(PFMET_phi)","MET*cos(PFMET_phi)","CaloMET*sin(CaloMET_phi)","CaloMET*cos(CaloMET_phi)","HT*cos(HT_phi)","HT*sin(HT_phi)","Jet1_pt*sin(Jet1_phi)","dPhiMETnearJet_Puppi","Lep2_pt*sin(Lep2_phi)","n_Interactions","dPhiMETnearJet","Lep1_pt*sin(Lep1_phi)", "Lep2_pt*cos(Lep2_phi)","dPhiLep1Jet1","dPhiLep1Lep2","Jet2_pt*cos(Jet2_phi)","vecsum_pT_l1l2_allJet","MT2","METunc_Puppi","dPhiMETfarJet_Puppi","dPhiMETfarJet","nJets","mLL","Jet2_eta","dPhiMETleadJet_Puppi","Lep1_eta","dPhiJet1Jet2","Jet1_eta","Jet1_pt*cos(Jet1_phi)","dPhiMETleadJet","Lep1_pt*cos(Lep1_phi)","Jet2_E","Lep1_flavor","MT","dPhiMETbJet_Puppi","Lep2_flavor","Lep1_E","Lep2_E","mjj","Lep2_eta","dPhiMETlead2Jet_Puppi","METsig","vecsum_pT_allJet","Jet2_pt*sin(Jet2_phi)","Jet1_E","dPhiMETbJet","MHT","dPhiMETlead2Jet","mass_l1l2_allJet","dPhiLep1bJet","ratio_vecsumpTlep_vecsumpTjet","looseLeptonVeto"]
+    #  ~inputVars = ["METunc_Puppi","PuppiMET*cos(PuppiMET_phi)","PuppiMET*sin(PuppiMET_phi)","MET*cos(PFMET_phi)","MET*sin(PFMET_phi)","CaloMET*sin(CaloMET_phi)","CaloMET*cos(CaloMET_phi)","vecsum_pT_allJet*sin(HT_phi)","vecsum_pT_allJet*cos(HT_phi)","Jet1_pt*sin(Jet1_phi)","Jet1_pt*cos(Jet1_phi)","MT2","Lep2_pt*sin(Lep2_phi)","Lep2_pt*cos(Lep2_phi)","Jet2_pt*cos(Jet2_phi)","Jet2_pt*sin(Jet2_phi)","Lep1_pt*sin(Lep1_phi)","Lep1_pt*cos(Lep1_phi)","n_Interactions","dPhiJet1Jet2","dPhiMETnearJet_Puppi","dPhiLep1Jet1","vecsum_pT_allJet","dPhiMETleadJet","nJets","MT","dPhiMETnearJet","Jet2_E","Jet1_eta","dPhiLep1Lep2","mLL","dPhiMETbJet_Puppi","dPhiMETfarJet","Lep2_flavor","vecsum_pT_l1l2_allJet","looseLeptonVeto","Lep2_eta","Lep1_eta","dPhiMETlead2Jet","dPhiMETlead2Jet_Puppi","dPhiMETbJet","dPhiLep1bJet","Lep1_E","Lep1_flavor","ratio_vecsumpTlep_vecsumpTjet","mjj","Lep2_E","dPhiMETfarJet_Puppi","mass_l1l2_allJet","METsig","dPhiMETleadJet_Puppi","Jet2_eta","MHT","Jet1_E","HT"]
+    #  ~inputVars = ["METunc_Puppi", "PuppiMET*cos(PuppiMET_phi)", "PuppiMET*sin(PuppiMET_phi)", "MET*cos(PFMET_phi)", "MET*sin(PFMET_phi)", "CaloMET*sin(CaloMET_phi)", "CaloMET*cos(CaloMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "Jet1_pt*sin(Jet1_phi)", "Jet1_pt*cos(Jet1_phi)", "MHT", "mass_l1l2_allJet", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)", "mjj", "n_Interactions", "MT2", "Lep2_pt*sin(Lep2_phi)", "dPhiMETleadJet_Puppi", "Lep2_pt*cos(Lep2_phi)", "HT", "dPhiMETleadJet", "dPhiLep1Jet1", "MT", "Lep1_pt*cos(Lep1_phi)", "vecsum_pT_allJet", "dPhiMETnearJet_Puppi", "vecsum_pT_l1l2_allJet", "nJets", "dPhiMETnearJet", "dPhiJet1Jet2", "Jet2_E", "Lep1_pt*sin(Lep1_phi)", "Jet1_E", "dPhiMETlead2Jet_Puppi", "dPhiLep1Lep2", "Lep1_E", "dPhiMETfarJet", "Jet2_eta", "dPhiMETbJet", "dPhiMETfarJet_Puppi", "mLL", "dPhiMETbJet_Puppi", "Lep2_flavor", "Lep2_E", "Jet1_eta", "Lep1_eta", "dPhiMETlead2Jet", "Lep1_flavor", "dPhiLep1bJet", "Lep2_eta", "METsig", "ratio_vecsumpTlep_vecsumpTjet", "looseLeptonVeto"]
+    #  ~inputVars = ["METunc_Puppi", "PuppiMET*cos(PuppiMET_phi)", "PuppiMET*sin(PuppiMET_phi)", "MET*cos(PFMET_phi)", "MET*sin(PFMET_phi)", "CaloMET*sin(CaloMET_phi)", "CaloMET*cos(CaloMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "Jet1_pt*sin(Jet1_phi)", "Jet1_pt*cos(Jet1_phi)", "MHT", "mass_l1l2_allJet", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)", "mjj", "n_Interactions", "MT2", "Lep2_pt*sin(Lep2_phi)", "dPhiMETleadJet_Puppi", "Lep2_pt*cos(Lep2_phi)", "HT", "dPhiMETleadJet", "dPhiLep1Jet1", "MT", "Lep1_pt*cos(Lep1_phi)", "vecsum_pT_allJet", "dPhiMETnearJet_Puppi", "vecsum_pT_l1l2_allJet", "nJets", "dPhiMETnearJet", "dPhiJet1Jet2", "Jet2_E", "Lep1_pt*sin(Lep1_phi)", "Jet1_E", "dPhiMETlead2Jet_Puppi", "dPhiLep1Lep2", "Lep1_E", "dPhiMETfarJet", "Jet2_eta", "dPhiMETbJet", "dPhiMETfarJet_Puppi", "mLL", "dPhiMETbJet_Puppi", "Lep2_flavor", "Lep2_E", "Jet1_eta", "Lep1_eta", "dPhiMETlead2Jet", "Lep1_flavor", "dPhiLep1bJet", "Lep2_eta", "METsig", "ratio_vecsumpTlep_vecsumpTjet", "looseLeptonVeto"]
+    #  ~inputVars = ["METunc_Puppi", "PuppiMET*cos(PuppiMET_phi)", "PuppiMET*sin(PuppiMET_phi)", "MET*cos(PFMET_phi)", "MET*sin(PFMET_phi)", "CaloMET", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "Jet1_pt*sin(Jet1_phi)", "Jet1_pt*cos(Jet1_phi)", "MHT", "mass_l1l2_allJet", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)", "mjj", "n_Interactions", "MT2", "Lep2_pt*sin(Lep2_phi)", "dPhiMETleadJet_Puppi", "Lep2_pt*cos(Lep2_phi)", "HT", "dPhiMETleadJet", "dPhiLep1Jet1", "MT", "Lep1_pt*cos(Lep1_phi)", "vecsum_pT_allJet", "dPhiMETnearJet_Puppi", "vecsum_pT_l1l2_allJet", "nJets", "dPhiMETnearJet", "dPhiJet1Jet2", "Jet2_E", "Lep1_pt*sin(Lep1_phi)", "Jet1_E", "dPhiMETlead2Jet_Puppi", "dPhiLep1Lep2", "Lep1_E", "dPhiMETfarJet", "Jet2_eta", "dPhiMETbJet", "dPhiMETfarJet_Puppi", "mLL", "dPhiMETbJet_Puppi", "Lep2_flavor", "Lep2_E", "Jet1_eta", "Lep1_eta", "dPhiMETlead2Jet", "Lep1_flavor", "dPhiLep1bJet", "Lep2_eta", "METsig", "ratio_vecsumpTlep_vecsumpTjet", "looseLeptonVeto"]
     
-    #  ~inputVars = ["PuppiMET_xy*sin(PuppiMET_xy_phi)", "PuppiMET_xy*cos(PuppiMET_xy_phi)", "MET*sin(PFMET_phi)", "MET*cos(PFMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "CaloMET", "vecsum_pT_allJet", "MT2", "mjj", "nJets", "Jet1_E", "HT", "METunc_Puppi"]
-    #  ~inputVars = ["PuppiMET_xy*sin(PuppiMET_xy_phi)", "PuppiMET_xy*cos(PuppiMET_xy_phi)", "MET*sin(PFMET_phi)", "MET*cos(PFMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "CaloMET", "vecsum_pT_allJet", "mjj", "Jet1_E"]
+    #  ~inputVars = ["PuppiMET*sin(PuppiMET_phi)", "PuppiMET*cos(PuppiMET_phi)", "MET*sin(PFMET_phi)", "MET*cos(PFMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "CaloMET", "vecsum_pT_allJet", "MT2", "mjj", "nJets", "Jet1_E", "HT", "METunc_Puppi"]
+    #  ~inputVars = ["PuppiMET*sin(PuppiMET_phi)", "PuppiMET*cos(PuppiMET_phi)", "MET*sin(PFMET_phi)", "MET*cos(PFMET_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "CaloMET", "vecsum_pT_allJet", "mjj", "Jet1_E"]
     
     inputVars = ["PuppiMET_xy*sin(PuppiMET_xy_phi)", "PuppiMET_xy*cos(PuppiMET_xy_phi)", "MET_xy*sin(MET_xy_phi)", "MET_xy*cos(MET_xy_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "CaloMET", "vecsum_pT_allJet", "MT2", "mjj", "nJets", "Jet1_E", "HT", "METunc_Puppi"]
     
@@ -836,7 +836,7 @@ if __name__ == "__main__":
     #  ~modelNr = 63
     
     #  ~modelPath = "trainedModel_Keras/2018/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20220317-1934genMETweighted"
-    #  ~lr, dout, lamb, batch, nLayer, nodeFac, alph = -9.21034037198, 0.35, -2.99573227355, 8.51719319142, 6.0, 3.0, 0.2 #standard genMETrew, with new inputs (<20)
+    #  ~lr, dout, lamb, batch, nLayer, nodeFac, alph = -9.21034037198, 0.35, -2.99573227355, 8.51719319142, 6.0, 3.0, 0.2 #standard genMETrew, with new inputs (20)
     #  ~nInputs=int(len(inputVars))
     #  ~modelNr = 64
     
@@ -871,20 +871,20 @@ if __name__ == "__main__":
     #  ~modelNr = 20
     ###############
     #  ~nInputs = 22
-    #  ~print_targets(dataPath,inputVars[:nInputs],modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET_xy*cos(PuppiMET_xy_phi)-genMET*cos(genMET_phi)","PuppiMET_xy*sin(PuppiMET_xy_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
+    #  ~print_targets(dataPath,inputVars[:nInputs],modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
     #  ~modelPath = "trainedModel_Keras/2018/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20211125-1449genMETweighted"
     #  ~modelTitle = r"dropout={}; $\lambda$={}; genMET weight binning: (0,500,5)GeV".format(0.35,0.05)
     #  ~#lr, dout, lamb, batch, nLayer, nodeFac, alph = -9.21034037198, 0.35, -2.99573227355, 8.51719319142, 6.0, 3.0, 0.2, using SeLU
     #  ~modelNr = 28
 
-    plot_Output(dataPath,inputVars[:nInputs],modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET_xy*cos(PuppiMET_xy_phi)-genMET*cos(genMET_phi)","PuppiMET_xy*sin(PuppiMET_xy_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
+    plot_Output(dataPath,inputVars[:nInputs],modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
     
-    #  ~plot_Purity(dataPath,inputVars[:nInputs],modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET_xy*cos(PuppiMET_xy_phi)-genMET*cos(genMET_phi)","PuppiMET_xy*sin(PuppiMET_xy_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
-    #  ~plot_Purity(dataPath,inputVars[:nInputs],modelPath,"TTbar_diLepton","diff_xy",["PuppiMET_xy*cos(PuppiMET_xy_phi)-genMET*cos(genMET_phi)","PuppiMET_xy*sin(PuppiMET_xy_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
-    #  ~plot_Output(dataPath,inputVars,modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET_xy*cos(PuppiMET_xy_phi)-genMET*cos(genMET_phi)","PuppiMET_xy*sin(PuppiMET_xy_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=False,genMETweighted=True)
+    #  ~plot_Purity(dataPath,inputVars[:nInputs],modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
+    #  ~plot_Purity(dataPath,inputVars[:nInputs],modelPath,"TTbar_diLepton","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
+    #  ~plot_Output(dataPath,inputVars,modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=False,genMETweighted=True)
     #  ~nInputs=30
     #  ~for (modelPath, modelNr) in [(modelPath1, 6221), (modelPath2, 6222), (modelPath3, 6223)]:
-        #  ~print_targets(dataPath,inputVars[:nInputs],modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET_xy*cos(PuppiMET_xy_phi)-genMET*cos(genMET_phi)","PuppiMET_xy*sin(PuppiMET_xy_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
-        #  ~plot_Output(dataPath,inputVars[:22],modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET_xy*cos(PuppiMET_xy_phi)-genMET*cos(genMET_phi)","PuppiMET_xy*sin(PuppiMET_xy_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=False,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
-        #  ~plot_Purity(dataPath,inputVars[:22],modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET_xy*cos(PuppiMET_xy_phi)-genMET*cos(genMET_phi)","PuppiMET_xy*sin(PuppiMET_xy_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=False,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
+        #  ~print_targets(dataPath,inputVars[:nInputs],modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
+        #  ~plot_Output(dataPath,inputVars[:22],modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=False,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
+        #  ~plot_Purity(dataPath,inputVars[:22],modelPath,"TTbar_amcatnlo","diff_xy",["PuppiMET*cos(PuppiMET_phi)-genMET*cos(genMET_phi)","PuppiMET*sin(PuppiMET_phi)-genMET*sin(genMET_phi)"],modelTitle,modelNr,updateInput=False,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
 
