@@ -6,3 +6,9 @@ logs/*
 HyperParameterResuls/*
 outputComparison/*
 trainedModel_Keras/*
+ShapleyPlots/*
+RunGOFCondor/p_val_plots/*
+RunGOFCondor/Impact_plots/*
+RunGOFCondor/CondorGOFsubmits/*
+RunGOFCondor/HTplots/*
+RunGOFCondor/utilities/*
