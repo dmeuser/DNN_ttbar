@@ -148,10 +148,10 @@ def print_targets(year,dataPath,inputVars,modelPath,treeName,targetName,target,t
     print(title)
     
     if noTrainSplitting:
-        evalArr = [train_x])
+        evalArr = [train_x]
+    evalArr = [train_x, val_x, test_x]
     
-    
-    for i_sample,data_x in enumerate([train_x, val_x, test_x]):
+    for i_sample,data_x in enumerate(evalArr):
     #  ~for i_sample,data_x in enumerate([train_x]):
         #  ~data_x["DNN_MET_X"]=data_x["PuppiMET_xy*cos(PuppiMET_xy_phi)"]-data_x["DNN_1"]
         #  ~data_x["DNN_MET_Y"]=data_x["PuppiMET_xy*sin(PuppiMET_xy_phi)"]-data_x["DNN_2"]
