@@ -147,7 +147,7 @@ def plotGOF(data, toysArr, output_plot_basename, txtTL="", txtTR="", varName="",
     ### output plot
     canvas_name = os.path.basename(output_plot_basename)
 
-    cgof = ROOT.TCanvas(canvas_name, canvas_name, 800, 800)
+    cgof = ROOT.TCanvas(canvas_name, canvas_name, 900, 800)
 
     L, R, T, B = 0.150, 0.035, 0.050, 0.150
 
@@ -247,7 +247,7 @@ def plotGOF(data, toysArr, output_plot_basename, txtTL="", txtTR="", varName="",
     cgof.Update()
     # toys_h1.SetTitle(title)
     #  ~toys_h1.SetTitle(';GoF (saturated);Number of MC Toys;')
-    toys_h1.GetXaxis().SetTitle("#lambda_{saturated} ("+txtTR+")")
+    toys_h1.GetXaxis().SetTitle("#lambda_{sat} ("+txtTR+")")
     toys_h1.GetYaxis().SetTitle("Number of MC Toys")
     toys_h1.SetTitle("")
     toys_h1.GetXaxis().SetLabelSize  (0.045)
@@ -265,11 +265,11 @@ def plotGOF(data, toysArr, output_plot_basename, txtTL="", txtTR="", varName="",
     leg.SetFillColor(0)
     leg.SetTextFont(42)
     leg.AddEntry(toys_h1, 'toy data', 'lep')
-    leg.AddEntry(data_li, 'observed'+' = {:.2f}'.format(DATA)   , 'l')
+    leg.AddEntry(data_li, '#lambda_{sat}^{data}'+' = {:.2f}'.format(DATA)   , 'l')
     leg.AddEntry(toys_h2, 'p-value' +' = {:.2f}'.format(P_VALUE), 'f')
 
     if chi2_func:
-       chi2_func_str  = '#chi^{2} fit, ndf = '
+       chi2_func_str  = '#chi^{2} fit, n_{dof} = '
        chi2_func_str += '{:.1f} #pm {:.1f}'.format(chi2_func.GetParameter(1), chi2_func.GetParError(1))
        leg.AddEntry(chi2_func, chi2_func_str, 'l')
 

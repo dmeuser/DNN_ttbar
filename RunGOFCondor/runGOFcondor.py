@@ -5,9 +5,11 @@ import subprocess as sp
 def runGOFtest(singleVar=None, makeBashs=False, dim=0, year="2018", version="v07"):
 	
 	clusterFileDir = "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"
+	# List of input features
 	varList = ["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "CaloMET", "MT2", "mjj", "nJets", "Jet1_E", "HT", "Jet2_pX", "Jet2_pY"]
-	varList2D = []
 	
+	# Creating list of input feature combinations
+	varList2D = []
 	for i, el1 in enumerate(varList):
 		for j, el2 in enumerate(varList[i+1:]):
 			varList2D.append(el1+"_VS_"+el2)
@@ -16,14 +18,12 @@ def runGOFtest(singleVar=None, makeBashs=False, dim=0, year="2018", version="v07
 		varList=varList2D
 	elif dim!=1:
 		varList+=varList2D
-	#  ~varList = ["PuppiMET_xy_X_VS_Jet2_pX", "PuppiMET_xy_Y_VS_Jet2_pY"]
 	
-	
+	# running for only one input feature, can also be a 2D combination
 	if singleVar:
 		varList = []
 		varList.append(singleVar)
 	
-	#  ~varList = ["PuppiMET_xy_Y_VS_MET_xy_Y_emu", "PuppiMET_xy_Y_VS_MET_xy_Y_ee", "PuppiMET_xy_Y_VS_MET_xy_Y_mumu"]
 	
 	for var in varList:
 		pathList = [clusterFileDir+year+"/"+var+"_files",
@@ -32,7 +32,7 @@ def runGOFtest(singleVar=None, makeBashs=False, dim=0, year="2018", version="v07
 					clusterFileDir+year+"/"+var+"_files/CombineOutLogErr/runGOF_data",
 					clusterFileDir+year+"/"+var+"_files/CombineOutLogErr/runGOF_toys",
 					clusterFileDir+year+"/"+var+"_files/CombineOutLogErr/plotGOF_chi"]
-		
+		# Create necessary folders
 		for filePath in pathList:
 			if not os.path.exists(filePath):
 				os.makedirs(filePath)
@@ -64,6 +64,7 @@ request_CPUs 		= 1
 +JobFlavour 		= {subLength}
 queue {subNr}
 """.format(path=clusterFileDir, year=year, varName=var, subName=subName, subLength=subLength, subNr=subNr, version=version))
+	# new bash files are created, if necessary 
 	if makeBashs:
 		for subName in ["runGOF_data", "runGOF_toys", "plotGOF_chi"]:
 			with open(clusterFileDir+subName+".sh","w") as f:
@@ -82,13 +83,13 @@ python {subName}.py --n "$1" --y "$2" --v "$3"
 	""".format(subName=subName, year=year, version=version))
 
 	for var in varList:
+		# old dag submission files are deleted
 		for oldFileName in [".dag.condor.sub", ".dag.dagman.log", ".dag.dagman.out", ".dag.metrics", ".dag.lib.err", ".dag.nodes.log", ".dag.dagman.log", ".dag.lib.out", ".dag.rescue001"]:
 			if os.path.isfile(clusterFileDir+year+"/"+var+"_files/runGOF_"+var+oldFileName):
 				sp.call(["rm","runGOF_"+var+oldFileName],cwd=clusterFileDir+year+"/"+var+"_files")
+		# dag files are submitted to condor
 		condSub = sp.call(["condor_submit_dag",clusterFileDir+year+"/"+var+"_files/runGOF_"+var+".dag"])
-		#  ~condSub = sp.call(["condor_submit",clusterFileDir+year+"/"+var+"_files/plotGOF_chi_"+var+".sub"])
 		print(condSub)
-		#  ~print("condor_submit",clusterFileDir+year+"/"+var+"_files/plotGOF_chi_"+var+".sub")
 
 
 

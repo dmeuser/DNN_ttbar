@@ -119,41 +119,96 @@ def plotLoss(tabs, jname):
     #  ~for i, tab in enumerate(tabs):
         #  ~plt.scatter(np.arange(1,len(tab)+1,1), tab, color=colors[i], alpha=0.7, s=10, label=labels[i])
     plt.scatter(np.arange(1,len(tabs[0])+1,1), tabs[0], color=colors[0], alpha=0.7, s=10, label=labels[0])
-    plt.scatter(np.arange(101,100+len(tabs[1][100:])+1,1), tabs[1][100:], color=colors[1], alpha=0.7, s=10, label=labels[1])
-    plt.legend()
-    plt.axvline(40, color="r")
-    plt.axvline(100, color="r")
-    plt.axvline(160, color="r")
-    plt.xlabel("Iteration")
-    plt.ylabel("-MSE")
+    #  ~plt.scatter(np.arange(101,100+len(tabs[1][100:])+1,1), tabs[1][100:], color=colors[1], alpha=0.7, s=10, label=labels[1])
+    #  ~plt.legend()
+    plt.xlabel("Optimization Step")
+    plt.ylabel(r"$-J_{\rm logcosh}^{\rm val}$")
     plt.tight_layout()
     #  ~plt.show()
     #  ~plt.savefig("lossplot"+jname[-10:-5]+".pdf")
-    plt.savefig("lossComp_MSE_logc.pdf")
+    plt.savefig("lossOptimization.pdf")
+    
+def readFluct(path):
+    vals = []
+    feats = []
+    with open(path) as f:
+        for line in f.readlines():
+            temp = [i for i in line.split(", ")[0:4]]
+            feats = line.split(", ")[-1]
+            vals.append(temp)
+    table=np.array(vals, dtype=float)
+    feats = [float(i) for i in feats.split(",")[1:]]
+    print("Fluctuations for DNN with:\nlearn rate: {:.2g}, dropout: {:.2g}, lambda: {:.2g}, batch: {:.2g}, number of Layers: {:.2g}, node factor: {:.2g}, alpha: {:.2g}".format(*feats))
+    print(r"\begin{tabular}{c|c|c|c|c}")
+    print(r"    Target & Mean Value & Relative Deviation & min Value & max Value \\")
+    nVar = ["Loss", "Logcosh", "Resolution Mean", "Resolution Std"]
+    for j,tab in enumerate(table.T):
+        #  ~print(tab)
+        string = "    {} & ${:.5g} \pm {:.3g}$ & {:.2g}\% & {:.5g} & {:.5g}".format(nVar[j], np.mean(tab), np.std(tab), np.std(tab)/np.mean(tab), np.min(tab), np.max(tab))
+        string += r" \\"
+        print(string)
+        #  ~print(len(tab))
+        #  ~print(string
+    print(r"\end{tabular}")
+
+def plotYearCompBayes(filePath):
+    nodeFacs = [1./8, 1./4, 1./2, 1., 2., 4.]
+    #  ~tabs = []
+    meanVals = []
+    offSet = 0.05
+    fig, ax = plt.subplots(1,1)
+    for j,year in enumerate(["2018", "2017", "2016_postVFP", "2016_preVFP"]):
+        tab = readTable("/home/home4/institut_1b/nattland/DNN_ttbar/BayesOptLogs/"+year+filePath)
+        #  ~print(tab[5:10,0])
+        #  ~print(tab[:,0])
+        means = -1*np.array([np.mean(tab[i:i+5,0]) for i in [5,0,10,15]])
+        stds = np.array([np.std(tab[i:i+5,0]) for i in [5,0,10,15]])
+        errs = stds/np.sqrt(5)
+        meanVals.append(means)      
+        if j==0:
+            print(means, stds)
+            print(r"DNN & learn rate & dropout & lambda & batch & number of Layers & node factor & alpha \\")
+            tab[:,2]=np.round(np.exp(tab[:,2]))
+            tab[:,4]=np.exp(tab[:,4])
+            tab[:,5]=np.exp(tab[:,5])
+            tab[:,6]=np.round(tab[:,6])
+            for k in [0,5,10,15]: print("DNN 1 & {:.2g} & {:.4g} & {:.4g} & {:.2g} & {:.2g} & {:.2g} & {:.3g} \\\\".format(*tab[k,1:]))
+            #  ~print(tab[k,:]
+        #  ~ax.errorbar(np.linspace(0.85,3.85,4)+0.02*j, means, yerr=stds, label="std for"+year, linestyle="dashed", fmt='o', markersize=8, capsize=20, alpha=0.6)
+        ax.errorbar(np.linspace(1-1.5*offSet,4-1.5*offSet,4)+offSet*j, means, yerr=errs, label=year.replace("_", " "), fmt='o', markersize=3, capsize=10, linestyle="dashed", alpha=0.8)
+    for arr in meanVals:
+        print("{:.4g} & {:.4g} & {:.4g} & {:.4g}".format(*arr))
+    plt.xticks(ticks=[1,2,3,4], labels=["DNN 1", "DNN 2", "DNN 3", "DNN 4"])
+    ax.set_ylabel(r"$J_{\rm logcosh}^{\rm val}$")
+    ax.text(0.,1.,"CMS",transform=ax.transAxes,horizontalalignment='left',verticalalignment='bottom', weight="bold", fontsize=14)
+    ax.text(0.,1.,r"           $\,$Simulation$\,\bullet\,$Private work",transform=ax.transAxes,horizontalalignment='left',verticalalignment='bottom', style="italic", fontsize=10, color=(0.3,0.3,0.3))
+    #  ~ax.text(1.,1.,r"$137.6\,$fb${}^{-1}\,(13\,$TeV)",transform=ax.transAxes,horizontalalignment='right',verticalalignment='bottom',fontsize=12)
+    plt.legend()
+    plt.tight_layout(pad=0.1)
+    plt.savefig("yearComp.pdf")
 
 
 if __name__ == "__main__":
-    #  ~table = readTable("HParaLogs/logBayes_C2_3.json")
-    #  ~jname = "logBayes_V1.json"
-    #  ~jname = "/home/home4/institut_1b/nattland/DNN_ttbar/BayesOptLogs/2018/Run3/logBayes_V1.json"
-    jname = "/home/home4/institut_1b/nattland/DNN_ttbar/BayesOptLogs/2018/Run1/logBayes_V1.json"
-    #  ~jname = "HParaLogs/logBayes_C3_4.json"
-    #  ~jname = "HParaLogs/logBayes_C3_4.json"
-    #  ~table = readTable(jname)
-    #  ~table = readTable("HParaLogs/logBayes_comb_1_4_C1_3.json")
-    table = readTable(jname)
-    #  ~table = readTableNoLamb(jname)
-    #  ~prntTable(lossTable)
-    #  ~maxv=-1
-    #  ~tab1 = readTable("HParaLogs/logBayes_C3_3.json")
-    #  ~tab2 = readTable("HParaLogs/logBayes_C5_4.json")
-    #  ~tab3 = readTable("HParaLogs/logBayes_C2_4.json")
-    #  ~prntTable(table)
+    plotDF = False
+    #  ~jname = "/home/home4/institut_1b/nattland/DNN_ttbar/BayesOptLogs/2018/Run7/fluctComp_v2.txt"
+    jname = "/home/home4/institut_1b/nattland/DNN_ttbar/BayesOptLogs/2018/Run4/logBayes_V1.json"
+    #  ~jname = "/home/home4/institut_1b/nattland/DNN_ttbar/BayesOptLogs/2018/Run4/Fluct_test_std.txt"
     
-    lossDF = pd.DataFrame({"val_loss": -1*table[:,0], "alpha": table[:,1], "batch_size": table[:,2], "dropout": table[:,3], "lambda": table[:,4], "learn_rate": table[:,5], "n_layers": table[:,6], "n_nodes": table[:,7]})
-    #  ~lossDF = pd.DataFrame({"val_loss": -1*table[:,0], "alpha": table[:,1], "batch_size": table[:,2], "dropout": table[:,3], "learn_rate": table[:,4], "n_layers": table[:,5], "n_nodes": table[:,6]})
+    #  ~readFluct(jname)
+    plotYearCompBayes("/Run6/logBayes_yearComp.json")
     
-    #  ~plotDF(lossDF)
-    #  ~plotDFv2(lossDF)
-    plotDFv2(lossDF)
-    #  ~plotLoss([tab1[:,0], tab2[:,0]], jname)
+    
+    
+    if plotDF:
+        table = readTable(jname)
+        print(table[np.argmax(table[:,0]),:])
+
+        
+        lossDF = pd.DataFrame({"val_loss": -1*table[:,0], "alpha": table[:,1], "batch_size": table[:,2], "dropout": table[:,3], "lambda": table[:,4], "learn_rate": table[:,5], "n_layers": table[:,6], "n_nodes": table[:,7]})
+        #  ~lossDF = pd.DataFrame({"val_loss": -1*table[:,0], "alpha": table[:,1], "batch_size": table[:,2], "dropout": table[:,3], "learn_rate": table[:,4], "n_layers": table[:,5], "n_nodes": table[:,6]})
+        #  ~print(lossDF.shape)
+        plotDF(lossDF)
+        #  ~plotDFv2(lossDF)
+        #  ~plotDFv2(lossDF)
+        #  ~plotLoss([table[:,0]], jname)
+    

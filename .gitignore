@@ -1,5 +1,7 @@
 *.log
 *.out
+*.root
+*.pdf
 LossPlots/*
 input/*
 logs/*
