@@ -1,0 +1,11 @@
+Universe                = vanilla
+executable              = BayesOpt.sh
+arguments               = "2016_postVFP v02 '{alph:0.3426376335018234,batch:6.871721384901001,dout:0.2502281953583664,lamb:-3.240474248424274,lr:-11.265527212375277,nLayer:3.1195698022477463,nodeFac:2.6166759399089075}'"
+output                  = HyperOutLogErr/TestingRun/Fluct_genMETbin_1.$(ClusterId).$(ProcId).out
+error                   = HyperOutLogErr/TestingRun/Fluct_genMETbin_1.$(ClusterId).$(ProcId).err
+log                     = HyperOutLogErr/TestingRun/Fluct_genMETbin_1.$(ClusterId).log
+stream_output           = True
+request_GPUs 		= 1
+request_CPUs 		= 1
++MaxRuntime 		= 28800
+queue 1
