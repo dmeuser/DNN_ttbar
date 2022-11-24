@@ -38,14 +38,14 @@ def rmsFUNC(x):
 def meanErr(x):
     return 2*np.std(x)/np.sqrt(len(x))
 
-def getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeName,update=False,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,cut="(PuppiMET_xy>0)",noTrainSplitting=False):
+def getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeName,update=False,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,cut="(PuppiMET_xy>0)",noTrainSplitting=False,testRun=False):
     # Defining End of binning and binWidth for genMETreweighting (in GeV)
     binE = 400
     binW = 8
         
     appendCount = 0
     # append target variables to be also read in
-    for subList in [target, ["SF", "genMET", "PtNuNu", "PtNuNu_phi", "Lep1_phi", "Lep2_phi", "PuppiMET_xy", "PuppiMET_xy_phi", "genMET_phi", "MET_xy", "MET_xy_phi"]]:
+    for subList in [target, ["SF","genMET","PtNuNu","PtNuNu_phi","Lep1_phi","Lep2_phi","PuppiMET_xy","PuppiMET_xy_phi","genMET_phi","MET_xy","MET_xy_phi","n_Interactions","DeepMET_reso","DeepMET_reso_phi","DeepMET_resp","DeepMET_resp_phi"]]:
         for var in subList:
             inputVars.append(var)
             appendCount+=1
@@ -85,7 +85,6 @@ def getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeNam
         if only_emu:
             cut+="&(emu==1)"    # use only emu events if selected
         inputFeatures = events.arrays(inputVars,cut,library="pd")   # load inputs from rootfile
-        
    
         if genMETweighted:
             bins=list(range(0,binE,binW))
@@ -97,6 +96,12 @@ def getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeNam
             sampleWeights=sampleWeights*SF_weights
         
         x,y,metVals = inputFeatures[inputVars[:-appendCount]],inputFeatures[target],inputFeatures[inputVars[-appendCount:]]
+        
+        if testRun:     #use only fraction of inputs for test run
+            x = x[:100000]
+            y = y[:100000]
+            metVals = metVals[:100000]
+            sampleWeights = sampleWeights[:100000]
         
         # split MC data in training, validation and test samples, x=inputs, y=targets, metVals=other Variable, that are not inputs e.g. genMET
         # if noTrainSplitting, almost all statistics are in training sample, used for plotting of purity/stability/response and for plotting of background samples
@@ -250,7 +255,7 @@ def getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeNam
     else: return train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals
     
     
-def getMETarrays(year,path,inputVars,modelPath,treeName,targetName,target,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False):
+def getMETarrays(year,path,inputVars,modelPath,treeName,targetName,target,correctedValues,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False):
     # function to get arrays for calculation of purity/stability/response
     
     if genMETweighted: train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals, _, _, _ = getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeName,update=True,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn,cut="(PuppiMET_xy>0)&(PtNuNu>0)",noTrainSplitting=True)
@@ -268,8 +273,8 @@ def getMETarrays(year,path,inputVars,modelPath,treeName,targetName,target,normal
         data_x[target[0]]=data_y[target[0]]
         data_x[target[1]]=data_y[target[1]]
         
-        data_x["DNN_MET_X"]=data_x["PuppiMET_xy*cos(PuppiMET_xy_phi)"]-data_x["DNN_1"]
-        data_x["DNN_MET_Y"]=data_x["PuppiMET_xy*sin(PuppiMET_xy_phi)"]-data_x["DNN_2"]
+        data_x["DNN_MET_X"]=data_x[correctedValues[0]]-data_x["DNN_1"]
+        data_x["DNN_MET_Y"]=data_x[correctedValues[1]]-data_x["DNN_2"]
         data_metVals["DNN_MET"]=np.sqrt(data_x["DNN_MET_X"]**2+data_x["DNN_MET_Y"]**2)
         
         # calculate quantites needed for purity/stability/response
@@ -280,6 +285,10 @@ def getMETarrays(year,path,inputVars,modelPath,treeName,targetName,target,normal
         data_metVals["dPhi_PuppiNearLep"] = np.array([np.abs(data_metVals["PuppiMET_xy_phi"]-data_metVals["Lep1_phi"]), np.abs(2*np.pi-np.abs(data_metVals["PuppiMET_xy_phi"]-data_metVals["Lep1_phi"])),np.abs(data_metVals["PuppiMET_xy_phi"]-data_metVals["Lep2_phi"]),np.abs(2*np.pi-np.abs(data_metVals["PuppiMET_xy_phi"]-data_metVals["Lep2_phi"]))]).min(axis=0)
         
         data_metVals["dPhi_PFNearLep"] = np.array([np.abs(data_metVals["MET_xy_phi"]-data_metVals["Lep1_phi"]), np.abs(2*np.pi-np.abs(data_metVals["MET_xy_phi"]-data_metVals["Lep1_phi"])),np.abs(data_metVals["MET_xy_phi"]-data_metVals["Lep2_phi"]),np.abs(2*np.pi-np.abs(data_metVals["MET_xy_phi"]-data_metVals["Lep2_phi"]))]).min(axis=0)
+        
+        data_metVals["dPhi_DeepResoNearLep"] = np.array([np.abs(data_metVals["DeepMET_reso_phi"]-data_metVals["Lep1_phi"]), np.abs(2*np.pi-np.abs(data_metVals["DeepMET_reso_phi"]-data_metVals["Lep1_phi"])),np.abs(data_metVals["DeepMET_reso_phi"]-data_metVals["Lep2_phi"]),np.abs(2*np.pi-np.abs(data_metVals["DeepMET_reso_phi"]-data_metVals["Lep2_phi"]))]).min(axis=0)
+        
+        data_metVals["dPhi_DeepRespNearLep"] = np.array([np.abs(data_metVals["DeepMET_resp_phi"]-data_metVals["Lep1_phi"]), np.abs(2*np.pi-np.abs(data_metVals["DeepMET_resp_phi"]-data_metVals["Lep1_phi"])),np.abs(data_metVals["DeepMET_resp_phi"]-data_metVals["Lep2_phi"]),np.abs(2*np.pi-np.abs(data_metVals["DeepMET_resp_phi"]-data_metVals["Lep2_phi"]))]).min(axis=0)
     
     return train_metVals, val_metVals, test_metVals
     #  ~return train_metVals
