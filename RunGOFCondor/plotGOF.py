@@ -3,8 +3,8 @@ import os
 import subprocess as sp
 
 def plotGOFtests(varName):
-	iPath = "/net/data_cms1b/user/nattland/top_analysis/2018/v06/output_framework/datacards/"+varName+"/"
-	oPath = "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+varName+"_files/Results_"+varName+"/"
+	iPath = "/net/data_cms1b/user/dmeuser/top_analysis/2018/v06/output_framework/datacards/"+varName+"/"
+	oPath = "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+varName+"_files/Results_"+varName+"/"
 	
 	# combineTool.py -M CollectGoodnessOfFit --input higgsCombineTest.GoodnessOfFit.mH125.root higgsCombineTest.GoodnessOfFit.mH125.123456.root -m 125.0 -o gof.json
 	# plotGof.py gof.json --statistic saturated --mass 125.0 -o gof_plot --title-right="my label"

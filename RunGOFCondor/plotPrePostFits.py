@@ -3,9 +3,9 @@ import argparse
 import os
 import subprocess as sp
 import matplotlib.pyplot as plt
-from utilities.auxiliary import *
-from utilities import style
-from ROOT import gROOT, TCanvas, TF1 , TGraph, TPad, THStack, TLegend, gPad, TGraphErrors, TLine, TString, TLatex
+#  ~from utilities.auxiliary import *
+#  ~from utilities import style
+from ROOT import gROOT, TCanvas, TF1 , TGraph, TPad, THStack, TLegend, gPad, TGraphErrors, TLine, TString, TLatex, TFile
 from ROOT import kGray, kAzure, kRed, kGreen, kCyan, kBlue, kBlack, gStyle
 import json
 
@@ -14,8 +14,8 @@ def drawPrePostHistos(year, file_path, toPlot, procList, oPath, varName, binning
 	for file_struct in toPlot:
 		vals = []
 		
-		ifile = ROOT.TFile.Open(file_path)
-		if (not ifile) or ifile.IsZombie() or ifile.TestBit(ROOT.TFile.kRecovered): return []
+		ifile = TFile.Open(file_path)
+		if (not ifile) or ifile.IsZombie() or ifile.TestBit(TFile.kRecovered): return []
 		
 		for proc in procList:
 			procName = file_struct + proc
@@ -264,7 +264,7 @@ def draw_lumi(year, pad, simulation, drawLumiText):
 def get_xsecPulls(varNames, procs):
 	arr = []
 	for varName in varNames:
-		iPath = "/net/data_cms1b/user/nattland/top_analysis/2018/v06/output_framework/datacards/"+varName+"/"
+		iPath = "/net/data_cms1b/user/dmeuser/top_analysis/2018/v06/output_framework/datacards/"+varName+"/"
 		shapeFileName = "fitDiagnosticsTest.root"
 		#  ~print(varName)
 		vals = []
@@ -286,7 +286,7 @@ def get_xsecPulls(varNames, procs):
 	return np.array(arr, dtype=float)
 	
 def plotPulls(varNames):
-	oPath = "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/"
+	oPath = "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/"
 	procs = ['DY_xsec', 'ST_xsec', 'TTother_xsec', 'other_xsec', 'r']
 	procNames = ['Drell-Yan', 'Single t', 'tt other', 'other bkg', 'signal strength']
 	
@@ -328,38 +328,42 @@ def plotPvals():
 	print(pVals)
 
 legends = {
-    "METunc_Puppi" : "#sigma_{MET}^{Puppi}",
-    "PuppiMET_X" : "p_{x}^{miss, old Puppi}",
-    "PuppiMET_Y" : "p_{y}^{miss, old Puppi}",
-    "PuppiMET_xy_X" : "p_{x}^{miss, Puppi}",
-    "PuppiMET_xy_Y" : "p_{y}^{miss, Puppi}",
-    "MET_X" : "p_{x}^{miss, old PF}",
-    "MET_Y" : "p_{y}^{miss, old PF}",
-    "MET_xy_X" : "p_{x}^{miss, PF}",
-    "MET_xy_Y" : "p_{y}^{miss, PF}",
-    "CaloMET_X" : "p_{x}^{miss, Calo}",
-    "CaloMET_Y" : "p_{y}^{miss, Calo}",
-    "CaloMET" : "p_{T}^{miss, Calo}",
-    "vecsum_pT_allJet_X" : "p_{x}^{all jets}",
-    "vecsum_pT_allJet_Y" : "p_{y}^{all jets}",
-    "Jet1_pX" : "p_{x}^{Jet 1}",
-    "Jet1_pY" : "p_{y}^{Jet 1}",
-    "MHT" : "MHT",
-    "mass_l1l2_allJet" : "m_{l1,l2,all jets}",
-    "Jet2_pX" : "p_{x}^{Jet 2}",
-    "Jet2_pY" : "p_{y}^{Jet 2}",
-    "mjj" : "m_{jj}",
-    "n_Interactions" : "n_{Interactions}",
-    "MT2" : "MT2",
-    "dPhiMETleadJet_Puppi" : "#Delta#phi(p_{T}^{miss, Puppi}, Jet 1)",
-    "Lep2_pX" : "p_{x}^{l 2}",
-    "Lep2_pY" : "p_{y}^{l 2}",
-    "HT" : "HT",    
-    "Lep1_pX" : "p_{x}^{l 1}",
-    "Lep1_pY" : "p_{y}^{l 1}",
-    "vecsum_pT_allJet" : "p_{T}^{all jets}",
-    "nJets" : "n_{jets}",
-    "Jet1_E" : "E_{jet 1}",
+	"METunc_Puppi" : "#sigma_{MET}^{Puppi}",
+	"PuppiMET_X" : "p_{x}^{miss, old Puppi}",
+	"PuppiMET_Y" : "p_{y}^{miss, old Puppi}",
+	"PuppiMET_xy_X" : "p_{x}^{miss, Puppi}",
+	"PuppiMET_xy_Y" : "p_{y}^{miss, Puppi}",
+	"MET_X" : "p_{x}^{miss, old PF}",
+	"MET_Y" : "p_{y}^{miss, old PF}",
+	"MET_xy_X" : "p_{x}^{miss, PF}",
+	"MET_xy_Y" : "p_{y}^{miss, PF}",
+	"CaloMET_X" : "p_{x}^{miss, Calo}",
+	"CaloMET_Y" : "p_{y}^{miss, Calo}",
+	"CaloMET" : "p_{T}^{miss, Calo}",
+	"vecsum_pT_allJet_X" : "p_{x}^{all jets}",
+	"vecsum_pT_allJet_Y" : "p_{y}^{all jets}",
+	"Jet1_pX" : "p_{x}^{Jet 1}",
+	"Jet1_pY" : "p_{y}^{Jet 1}",
+	"MHT" : "MHT",
+	"mass_l1l2_allJet" : "m_{l1,l2,all jets}",
+	"Jet2_pX" : "p_{x}^{Jet 2}",
+	"Jet2_pY" : "p_{y}^{Jet 2}",
+	"mjj" : "m_{jj}",
+	"n_Interactions" : "n_{Interactions}",
+	"MT2" : "MT2",
+	"dPhiMETleadJet_Puppi" : "#Delta#phi(p_{T}^{miss, Puppi}, Jet 1)",
+	"Lep2_pX" : "p_{x}^{l 2}",
+	"Lep2_pY" : "p_{y}^{l 2}",
+	"HT" : "HT",    
+	"Lep1_pX" : "p_{x}^{l 1}",
+	"Lep1_pY" : "p_{y}^{l 1}",
+	"vecsum_pT_allJet" : "p_{T}^{all jets}",
+	"nJets" : "n_{jets}",
+	"Jet1_E" : "E_{jet 1}",
+	"DeepMET_reso_X" : "p_{x}^{\rm miss, DReso}",
+	"DeepMET_reso_Y" : "p_{y}^{\rm miss, DReso}",
+	"DeepMET_resp_X" : "p_{x}^{\rm miss, DResp}",
+	"DeepMET_resp_Y" : "p_{y}^{\rm miss, DResp}"
 }
 
 if __name__ == '__main__':
@@ -367,16 +371,16 @@ if __name__ == '__main__':
 	#  ~toPlot = ["ee_prefit/", "emu_prefit/", "mumu_prefit/", "ee_postfit/", "emu_postfit/", "mumu_postfit/"]
 	toPlot = ["ee_prefit/", "emu_prefit/", "mumu_prefit/", "ee_postfit/", "emu_postfit/", "mumu_postfit/"]
 	year = "2018"
-	version = "v07"
+	version = "v08"
 	
 	#  ~binnings = [(0, 30, 31), (0, 36, 37), (0, 30, 31), (0, 30, 31), (0, 30, 31), (0, 25, 26), (0, 30, 31)]
 	#  ~varNames = ["PuppiMET_xy_X_VS_Jet2_pX", "PuppiMET_xy_Y_VS_MET_xy_Y", "PuppiMET_xy_Y_VS_CaloMET", "MET_xy_Y_VS_Jet2_pY", "Jet1_pX_VS_nJets", "Lep1_pY_VS_MT2", "PuppiMET_xy_Y_VS_MT2"]
 	#  ~binnings = [(-150, 150, 31)]
-	varNames = ["PuppiMET_xy_Y_VS_MET_xy_Y"]
+	#  ~varNames = ["PuppiMET_xy_Y_VS_MET_xy_Y"]
 	#  ~varNames = ["PuppiMET_xy_Y_VS_Lep1_pX"]
 	#  ~binnings = [(0, 30, 31)]
 	#  ~varNames = ["PuppiMET_xy_X_VS_Jet1_pY"]
-	binnings = [(0, 36, 37)]
+	#  ~binnings = [(0, 36, 37)]
 	#  ~varNames = ["PuppiMET_xy_X_VS_mjj"]
 	#  ~varNames = ["PuppiMET_X", "PuppiMET_Y", "MET_X", "MET_Y", "CaloMET", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y"]
 	#  ~varNames = ["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_Y", "vecsum_pT_allJet_X", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "CaloMET", "vecsum_pT_allJet", "MT2", "mjj", "nJets", "Jet1_E", "HT"]
@@ -396,9 +400,13 @@ if __name__ == '__main__':
 	#  ~binnings = [(0, 25, 26), (0, 36, 37), (-400, 400, 41), (40, 500, 24)]
 	#  ~varNames = ["Jet1_pY_VS_Jet1_E", "MET_xy_Y_VS_vecsum_pT_allJet_X", "Jet1_pY", "Jet1_E"]
 	
+	#  ~varNames = ["DeepMET_reso_X"]
+	varNames = ["PuppiMET_xy_X"]
+	binnings = [(-150, 150, 31)]
+	
 	for varName, binning in zip(varNames, binnings):
-		iPath = "/net/data_cms1b/user/nattland/top_analysis/"+year+"/"+version+"/output_framework/datacards/"+varName+"/"
-		oPath = "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+year+"/"+varName+"_files/Results_"+varName+"/"
+		iPath = "/net/data_cms1b/user/dmeuser/top_analysis/"+year+"/"+version+"/output_framework/datacards/"+varName+"/"
+		oPath = "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+year+"/"+varName+"_files/Results_"+varName+"/"
 		shapeFileName = "FitDiaShapes_"+varName+".root"
 		produceShapes = True
 		
@@ -419,9 +427,9 @@ if __name__ == '__main__':
 			print(iPath, fitDiaCMD)
 			print(fitDia)
 			
-			#  ~ShapeFromW = sp.check_output(["PostFitShapesFromWorkspace", "-w", iPath+"ttbar_"+varName+".root", "-o", iPath+shapeFileName, "--postfit", "-f", iPath+"fitDiagnosticsTest.root:fit_s", "--samples", "2000"])
-			#  ~print(ShapeFromW)
+			ShapeFromW = sp.check_output(["PostFitShapesFromWorkspace", "-w", iPath+"ttbar_"+varName+".root", "-o", iPath+shapeFileName, "--postfit", "-f", iPath+"fitDiagnosticsTest.root:fit_s", "--samples", "2000"])
+			print(ShapeFromW)
 		
-		#  ~drawPrePostHistos(year, iPath+shapeFileName, toPlot, procList, oPath, varName, binning, legName)
+		drawPrePostHistos(year, iPath+shapeFileName, toPlot, procList, oPath, varName, binning, legName)
 	#  ~plotPulls(varNames)
 	#  ~plotPvals()

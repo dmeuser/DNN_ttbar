@@ -1,0 +1,8 @@
+#! /bin/sh
+# simple script which continously checks job status every 30 seconds
+while true; do
+     condor_q -dag -nobatch -constraint JobUniverse!=9
+     # ~condor_q -dag -nobatch
+     #~ condor_q
+     sleep 30
+done

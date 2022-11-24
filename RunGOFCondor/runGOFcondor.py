@@ -4,9 +4,9 @@ import subprocess as sp
 
 def runGOFtest(singleVar=None, makeBashs=False, dim=0, year="2018", version="v07"):
 	
-	clusterFileDir = "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"
+	clusterFileDir = "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"
 	# List of input features
-	varList = ["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "CaloMET", "MT2", "mjj", "nJets", "Jet1_E", "HT", "Jet2_pX", "Jet2_pY"]
+	varList = ["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "CaloMET", "MT2", "mjj", "nJets", "Jet1_E", "HT", "Jet2_pX", "Jet2_pY", "DeepMET_reso_X", "DeepMET_reso_Y", "DeepMET_resp_X", "DeepMET_resp_Y"]
 	
 	# Creating list of input feature combinations
 	varList2D = []
@@ -16,7 +16,7 @@ def runGOFtest(singleVar=None, makeBashs=False, dim=0, year="2018", version="v07
 	
 	if dim==2:
 		varList=varList2D
-	elif dim!=1:
+	elif dim==0:
 		varList+=varList2D
 	
 	# running for only one input feature, can also be a 2D combination
@@ -26,6 +26,14 @@ def runGOFtest(singleVar=None, makeBashs=False, dim=0, year="2018", version="v07
 	
 	
 	for var in varList:
+		# old dag submission files are deleted
+		for oldFileName in [".dag.condor.sub", ".dag.dagman.log", ".dag.dagman.out", ".dag.metrics", ".dag.lib.err", ".dag.nodes.log", ".dag.dagman.log", ".dag.lib.out", ".dag.rescue001"]:
+			if os.path.isfile(clusterFileDir+year+"/"+var+"_files/runGOF_"+var+oldFileName):
+				sp.call(["rm","runGOF_"+var+oldFileName],cwd=clusterFileDir+year+"/"+var+"_files")
+		# remove old outputs
+		if os.path.isdir(clusterFileDir+year+"/"+var+"_files/Results_"+var):
+			sp.call(["rm",clusterFileDir+year+"/"+var+"_files/Results_"+var,"-r"])
+			
 		pathList = [clusterFileDir+year+"/"+var+"_files",
 					clusterFileDir+year+"/"+var+"_files/CombineOutLogErr",
 					clusterFileDir+year+"/"+var+"_files/Results_"+var,
@@ -56,9 +64,9 @@ PARENT T CHILD P
 Universe                = vanilla
 executable              = {path}{subName}.sh
 arguments               = {varName} {year} {version}
-output                  = {path}{year}/{varName}_files/CombineOutLogErr/{subName}/{subName}.$(ClusterId).$(ProcId).out
-error                   = {path}{year}/{varName}_files/CombineOutLogErr/{subName}/{subName}.$(ClusterId).$(ProcId).err
-log                     = {path}{year}/{varName}_files/CombineOutLogErr/{subName}/{subName}.$(ClusterId).log
+output                  = {path}{year}/{varName}_files/CombineOutLogErr/{subName}/{subName}.out
+error                   = {path}{year}/{varName}_files/CombineOutLogErr/{subName}/{subName}.err
+log                     = {path}{year}/{varName}_files/CombineOutLogErr/{subName}/{subName}.log
 stream_output           = True
 request_CPUs 		= 1
 +JobFlavour 		= {subLength}
@@ -70,12 +78,12 @@ queue {subNr}
 			with open(clusterFileDir+subName+".sh","w") as f:
 				f.write("""
 #!/bin/bash
-baseDir=/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/
+baseDir=/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/
 cd $baseDir
 
 export SCRAM_ARCH=slc7_amd64_gcc820
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-cd /home/home4/institut_1b/nattland/CMSSW_10_5_0
+cd /home/home4/institut_1b/dmeuser/CMSSW_10_5_0/CMSSW_10_5_0/src
 eval `scramv1 runtime -sh`
 
 cd $baseDir
@@ -83,10 +91,6 @@ python {subName}.py --n "$1" --y "$2" --v "$3"
 	""".format(subName=subName, year=year, version=version))
 
 	for var in varList:
-		# old dag submission files are deleted
-		for oldFileName in [".dag.condor.sub", ".dag.dagman.log", ".dag.dagman.out", ".dag.metrics", ".dag.lib.err", ".dag.nodes.log", ".dag.dagman.log", ".dag.lib.out", ".dag.rescue001"]:
-			if os.path.isfile(clusterFileDir+year+"/"+var+"_files/runGOF_"+var+oldFileName):
-				sp.call(["rm","runGOF_"+var+oldFileName],cwd=clusterFileDir+year+"/"+var+"_files")
 		# dag files are submitted to condor
 		condSub = sp.call(["condor_submit_dag",clusterFileDir+year+"/"+var+"_files/runGOF_"+var+".dag"])
 		print(condSub)
@@ -98,7 +102,7 @@ if __name__ == "__main__":
 	parser.add_argument('--singleVar', type=str, help="Calculate GOF for only this variable")
 	parser.add_argument('--year', type=str, help="Year, choose between 2016_preVFP, 2016_postVFP, 2017, 2018")
 	parser.add_argument('--version', type=str, help="treeVersion, such as v07")
-	parser.add_argument('--dim', type=str, help="dimensions, if 1D use 1, if 2D use 2, else both")
+	parser.add_argument('--dim', type=int, help="dimensions, if 1D use 1, if 2D use 2, else both")
 	args = parser.parse_args()
 	
 	

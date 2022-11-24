@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# import argparse, os, json, ROOT
-import argparse
+import argparse, os, json, ROOT
+#  ~import argparse
 
 # from tools.common import *
-from utilities.auxiliary import *
-from utilities import style
+#  ~from utilities.auxiliary import *
+#  ~from utilities import style
 import numpy as np
 from ROOT import TLatex, kBlack
 import json
@@ -394,13 +394,13 @@ if __name__ == '__main__':
     for variable in variables:
         #  ~data = "Jobs_InputValidation_try3/workspace_FR2_ll_"+variable+"/GoodnessOfFit/Data/higgsCombine_workspace_FR2_ll_"+variable+".GoodnessOfFit.mH125.root"
         #  ~toys = "Jobs_InputValidation_try3/workspace_FR2_ll_"+variable+"/GoodnessOfFit/toys/higgsCombine_workspace_FR2_ll_"+variable+".GoodnessOfFit.mH125.101.root"
-        data = "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+variable+"_files/Results_"+variable+"/higgsCombineTest.GoodnessOfFit.mH125.root"
-        #  ~toys = "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+variable+"_files/Results_"+variable+"/higgsCombineTest.GoodnessOfFit.mH125.1544232278.root"
-        toys = ["/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+variable+"_files/Results_"+variable+"/higgsCombineTest.GoodnessOfFit.mH125.1544232278.root",
-                "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+variable+"_files/Results_"+variable+"/higgsCombineTest.GoodnessOfFit.mH125.-563124713.root",
-                "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+variable+"_files/Results_"+variable+"/higgsCombineTest.GoodnessOfFit.mH125.-5586677.root"
+        data = "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+variable+"_files/Results_"+variable+"/higgsCombineTest.GoodnessOfFit.mH125.root"
+        #  ~toys = "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+variable+"_files/Results_"+variable+"/higgsCombineTest.GoodnessOfFit.mH125.1544232278.root"
+        toys = ["/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+variable+"_files/Results_"+variable+"/higgsCombineTest.GoodnessOfFit.mH125.1544232278.root",
+                "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+variable+"_files/Results_"+variable+"/higgsCombineTest.GoodnessOfFit.mH125.-563124713.root",
+                "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+variable+"_files/Results_"+variable+"/higgsCombineTest.GoodnessOfFit.mH125.-5586677.root"
                 ]
                 
         variableName = legends[variable]
-        outputFolder = "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+variable+"_files/Results_"+variable+"/"
+        outputFolder = "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+variable+"_files/Results_"+variable+"/"
         plotGOF(data, toys, outputFolder+"PValue", txtTL="", txtTR=variableName)

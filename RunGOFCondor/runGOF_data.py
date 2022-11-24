@@ -3,8 +3,8 @@ import os
 import subprocess as sp
 
 def runCmds_GOF_data(varName, year, version):
-	iPath = "/net/data_cms1b/user/nattland/top_analysis/"+year+"/"+version+"/output_framework/datacards/"+varName+"/"
-	oPath = "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+year+"/"+varName+"_files/Results_"+varName+"/"
+	iPath = "/net/data_cms1b/user/dmeuser/top_analysis/"+year+"/"+version+"/output_framework/datacards/"+varName+"/"
+	oPath = "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+year+"/"+varName+"_files/Results_"+varName+"/"
 	
 	cmd_t2w = "text2workspace.py --channel-masks "+iPath+"ttbar_"+varName+".txt -o "+iPath+"ttbar_"+varName+".root"
 	t2w = sp.check_output(cmd_t2w.split())

@@ -5,8 +5,6 @@ import os.path
 import argparse
 
 def plot_P_Vals(year, version):
-    #  ~iPath = "/net/data_cms1b/user/nattland/top_analysis/2018/v07/output_framework/datacards/"+varName+"/"
-    #  ~oPath = "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+varName+"_files/Results_"+varName+"/"
     if year=="2017":
         lumi=41.5
     elif year=="2016_preVFP":
@@ -16,7 +14,8 @@ def plot_P_Vals(year, version):
     else:
         lumi=59.8
     #  ~varList = np.array(["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "CaloMET", "MT2", "mjj", "nJets", "Jet1_E", "HT", "Jet2_pX", "Jet2_pY"])
-    varList = np.array(["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "mjj", "Jet1_E", "HT", "Jet2_pX", "Jet2_pY"])
+    varList = np.array(["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "CaloMET", "MT2", "mjj", "nJets", "Jet1_E", "HT", "Jet2_pX", "Jet2_pY", "DeepMET_reso_X", "DeepMET_reso_Y", "DeepMET_resp_X", "DeepMET_resp_Y"])
+    #  ~varList = np.array(["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "mjj", "Jet1_E", "HT", "Jet2_pX", "Jet2_pY"])
     
     niceList = np.array([legends[i] for i in varList])
     
@@ -32,14 +31,15 @@ def plot_P_Vals(year, version):
     failedArr = []
     
     for var in np.concatenate((varList, varList2D)):
-        #  ~fPath = "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+year+"/"+var+"_files/Results_"+var+"/gof_"+var+".json"
-        fPath = "/net/data_cms1b/user/nattland/top_analysis/"+year+"/"+version+"/output_framework/GOFtestResults//"+var+"_files/Results_"+var+"/gof_"+var+".json"
+        fPath = "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+year+"/"+var+"_files/Results_"+var+"/gof_"+var+".json"
+        #  ~fPath = "/net/data_cms1b/user/dmeuser/top_analysis/"+year+"/"+version+"/output_framework/GOFtestResults//"+var+"_files/Results_"+var+"/gof_"+var+".json"
 	
-        #  ~print(var)
         if os.path.exists(fPath):
             with open(fPath) as f:
-                data = json.load(f)
-                #  ~print(data)
+                try:
+                    data = json.load(f)
+                except ValueError:
+                    print(var," has no valid output")
                 pArr.append([var, data["125.0"]["p"]])
         else:
             failedArr.append(var)
@@ -69,7 +69,8 @@ def plot_P_Vals(year, version):
     #plt.tight_layout()
     #  ~plt.savefig("p_vals_histo"+year+".pdf")
     
-    fig, ax = plt.subplots(1,1, figsize=(5,4.5))
+    #  ~fig, ax = plt.subplots(1,1, figsize=(5,4.5))
+    fig, ax = plt.subplots(1,1, figsize=(5.2,4.7))
     mesh1 = ax.pcolormesh(range(len(varList)+1), range(len(varList)+1), pMat, vmin=0., vmax=100., cmap=plt.get_cmap("viridis"))
     cbar = fig.colorbar(mesh1, ax=ax, pad=0.02)
     cbar.set_label("p-value (%)")
@@ -125,6 +126,10 @@ legends = {
     "vecsum_pT_allJet" : r"$p_{T}^{all\,j}$",
     "nJets" : r"$n_{jets}$",
     "Jet1_E" : r"$E_{\,j_{1}}$",
+    "DeepMET_reso_X" : r"$p_{x}^{\rm miss, DReso}$",
+    "DeepMET_reso_Y" : r"$p_{y}^{\rm miss, DReso}$",
+    "DeepMET_resp_X" : r"$p_{x}^{\rm miss, DResp}$",
+    "DeepMET_resp_Y" : r"$p_{y}^{\rm miss, DResp}$"
 }
     
 if __name__ == "__main__":

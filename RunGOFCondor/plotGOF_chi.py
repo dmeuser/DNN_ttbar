@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 from GOF_plotPValue import *
 
 def plotGOFtests(varName, varNameLeg, year, version):
-    iPath = "/net/data_cms1b/user/nattland/top_analysis/"+year+"/"+version+"/output_framework/datacards/"+varName+"/"
-    oPath = "/home/home4/institut_1b/nattland/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+year+"/"+varName+"_files/Results_"+varName+"/"
+    iPath = "/net/data_cms1b/user/dmeuser/top_analysis/"+year+"/"+version+"/output_framework/datacards/"+varName+"/"
+    oPath = "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+year+"/"+varName+"_files/Results_"+varName+"/"
     
     # combineTool.py -M CollectGoodnessOfFit --input higgsCombineTest.GoodnessOfFit.mH125.root higgsCombineTest.GoodnessOfFit.mH125.123456.root -m 125.0 -o gof.json
     # plotGof.py gof.json --statistic saturated --mass 125.0 -o gof_plot --title-right="my label"
@@ -71,6 +71,10 @@ legends = {
     "vecsum_pT_allJet" : "p_{T}^{all j}",
     "nJets" : "n_{jets}",
     "Jet1_E" : "E_{jet 1}",
+    "DeepMET_reso_X" : "p_{x}^{\rm miss, DReso}",
+    "DeepMET_reso_Y" : "p_{y}^{\rm miss, DReso}",
+    "DeepMET_resp_X" : "p_{x}^{\rm miss, DResp}",
+    "DeepMET_resp_Y" : "p_{y}^{\rm miss, DResp}"
 }
 
 
