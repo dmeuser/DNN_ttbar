@@ -38,9 +38,11 @@ def rmsFUNC(x):
 def meanErr(x):
     return 2*np.std(x)/np.sqrt(len(x))
 
-def getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeName,update=False,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,cut="(PuppiMET_xy>0)",noTrainSplitting=False,testRun=False):
+def getInputArray_allBins_nomDistr(year,pathNameDict,inputVars,targetName,target,update=False,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,cut="(PuppiMET_xy>0)",noTrainSplitting=False,testRun=False):
     # Defining End of binning and binWidth for genMETreweighting (in GeV)
-    binE = 400
+    #  ~binE = 400
+    #  ~binE = 500
+    binE = 600
     binW = 8
         
     appendCount = 0
@@ -54,14 +56,19 @@ def getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeNam
     if not os.path.exists("input/"+year+"/2D/"):    # create output folder for plots if not available
         os.makedirs("input/"+year+"/2D/")
     
+    treeName = "_".join(list(pathNameDict.keys()))  # Concat dataset strings, which are used for training
+    
     outputPath="input/"+year+"/2D/"+treeName+"_"+targetName+"_nomDistr.pkl"     # output path of pkl
     
-    # option to only use emu events for training (mainly for studies connected to 40 GeV cut)
+    # option to only use emu or mumu events for training
+    only_emu=False
+    only_mumu=False
     if treeName.split("_")[-1]=="emu":
         only_emu=True
         treeName=treeName.replace("_emu","")
-    else:
-        only_emu=False
+    elif treeName.split("_")[-1]=="mumu":
+        only_mumu=True
+        treeName=treeName.replace("_mumu","")
     
     # rename pkl if input is normalized or standardized
     #  ~if normalize:
@@ -79,19 +86,29 @@ def getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeNam
     # if update=true new pkl is created from root file (takes much longer than using existing pkl)
     if update:
         print("updating")
-        root_file = uproot.open(path)
-        events = root_file["ttbar_res100.0;1"][treeName+";1"]
-        #  ~cut = "(PuppiMET>0)"    # use only events selected by reco selection
-        if only_emu:
-            cut+="&(emu==1)"    # use only emu events if selected
-        inputFeatures = events.arrays(inputVars,cut,library="pd")   # load inputs from rootfile
+        inputFeaturesList = []
+        for treeNameSingle,path in pathNameDict.items():
+            root_file = uproot.open(path)
+            events = root_file["ttbar_res100.0;1"][treeNameSingle+";1"]
+            #  ~cut = "(PuppiMET>0)"    # use only events selected by reco selection
+            if only_emu:
+                cut+="&(emu==1)"    # use only emu events if selected
+            elif only_mumu:
+                cut+="&(mumu==1)"    # use only mumu events if selected
+            inputFeaturesList.append(events.arrays(inputVars,cut,library="pd"))   # load inputs from rootfile
+        
+        inputFeatures = pd.concat(inputFeaturesList)   # concat inputs from multiple files
    
         if genMETweighted:
-            bins=list(range(0,binE,binW))
+            bins=list(range(0,binE+binW,binW))
             bins.append(inputFeatures["genMET"].max())
             labels=list(range(1,len(bins)))
             inputFeatures["genMET_binNR"] = pd.cut(inputFeatures["genMET"], bins=bins, labels=labels)
             sampleWeights=compute_sample_weight("balanced",inputFeatures["genMET_binNR"])
+            
+            # Replace weight of overflow bin with weight of last bin in binE range
+            sampleWeights[sampleWeights==sampleWeights[inputFeatures["genMET_binNR"]==labels[-1]][0]] = sampleWeights[inputFeatures["genMET_binNR"]==labels[-2]][0]
+
             SF_weights = inputFeatures["SF"]
             sampleWeights=sampleWeights*SF_weights
         
@@ -255,11 +272,11 @@ def getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeNam
     else: return train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals
     
     
-def getMETarrays(year,path,inputVars,modelPath,treeName,targetName,target,correctedValues,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False):
+def getMETarrays(year,pathNameDict,inputVars,modelPath,targetName,target,correctedValues,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,testRun=False):
     # function to get arrays for calculation of purity/stability/response
     
-    if genMETweighted: train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals, _, _, _ = getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeName,update=True,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn,cut="(PuppiMET_xy>0)&(PtNuNu>0)",noTrainSplitting=True)
-    else: train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals = getInputArray_allBins_nomDistr(year,path,inputVars,targetName,target,treeName,update=True,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn,cut="(PuppiMET_xy>0)&(PtNuNu>0)",noTrainSplitting=True)
+    if genMETweighted: train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals, _, _, _ = getInputArray_allBins_nomDistr(year,pathNameDict,inputVars,targetName,target,update=True,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn,cut="(PuppiMET_xy>0)&(PtNuNu>0)",noTrainSplitting=True,testRun=testRun)
+    else: train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals = getInputArray_allBins_nomDistr(year,pathNameDict,inputVars,targetName,target,update=True,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn,cut="(PuppiMET_xy>0)&(PtNuNu>0)",noTrainSplitting=True,testRun=testRun)
 
     model = load_model(modelPath+".h5")
     

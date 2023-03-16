@@ -74,7 +74,7 @@ def bJetRegression_Model(lr=0.0001, dout=0.3, lamb=0.05, nLayer=6, nodeFac=1., a
     return model
 
 # function to train model
-def trainKeras(year,dataPath,inputVars,name,treeName,targetName,target,correctedValues,lr,dout,lamb,batch,nLayer,nodeFac,alph,nInputs,updateInput=False,permuationImportance=False,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,plotOutputs=False,modelNr=0,plotPurity=False):
+def trainKeras(year,pathNameDict,inputVars,name,targetName,target,correctedValues,lr,dout,lamb,batch,nLayer,nodeFac,alph,nInputs,updateInput=False,permuationImportance=False,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,plotOutputs=False,modelNr=0,plotPurity=False):
     
     
     inputVarsV2 = inputVars.copy()
@@ -91,10 +91,10 @@ def trainKeras(year,dataPath,inputVars,name,treeName,targetName,target,corrected
     modelName=name+"_"+"_"+targetName+"_"+year+"_"+stringStart      # time added to name of trained model 
     
     if genMETweighted:
-        train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals, train_weights, val_weights, test_weights = getInputArray_allBins_nomDistr(year,dataPath,inputVars,targetName,target,treeName,update=updateInput,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn)
+        train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals, train_weights, val_weights, test_weights = getInputArray_allBins_nomDistr(year,pathNameDict,inputVars,targetName,target,update=updateInput,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn)
         modelName+="genMETweighted"
     else:
-        train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals = getInputArray_allBins_nomDistr(year,dataPath,inputVars,targetName,target,treeName,update=updateInput,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn)
+        train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals = getInputArray_allBins_nomDistr(year,pathNameDict,inputVars,targetName,target,update=updateInput,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn)
     
     print("..........................\n\n", train_x.shape)
     
@@ -133,17 +133,16 @@ def trainKeras(year,dataPath,inputVars,name,treeName,targetName,target,corrected
     if plotOutputs: 
         modelTitle = r"learnrate={:.2e};dropout={:.2};$\lambda$={:.2e};batchsize={:.2e};".format(lr,dout,lamb,batch)+"\n"+r"n_layer={};nodefactor={};$\alpha$={:.2};n_inputs={};".format(nLayer,nodeFac,alph,nInputs)
         if genMETweighted: modelTitle+=" genMETweighted"
-        plot_Output(year,dataPath,inputVars,'trainedModel_Keras/'+year+'/2D/'+modelName,treeName,targetName,target,correctedValues,modelTitle,modelNr,updateInput=False,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn)
+        plot_Output(year,pathNameDict,inputVars,'trainedModel_Keras/'+year+'/2D/'+modelName,targetName,target,correctedValues,modelTitle,modelNr,updateInput=False,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn,noTrainSplitting=False)
         if plotPurity: 
-            print(year,dataPath,inputVarsV2,'trainedModel_Keras/'+year+'/2D/'+modelName,treeName,targetName,target,modelTitle,modelNr)
-            plot_Purity(year,dataPath,inputVarsV2,'trainedModel_Keras/'+year+'/2D/'+modelName,treeName,targetName,target,correctedValues,modelTitle,modelNr,updateInput=True,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn)
+            print(year,pathNameDict,inputVarsV2,'trainedModel_Keras/'+year+'/2D/'+modelName,targetName,target,modelTitle,modelNr)
+            plot_Purity(year,pathNameDict,inputVarsV2,'trainedModel_Keras/'+year+'/2D/'+modelName,targetName,target,correctedValues,modelTitle,modelNr,updateInput=True,normalize=normalize,standardize=standardize,genMETweighted=genMETweighted,overSample=overSample,underSample=underSample,doSmogn=doSmogn)
 
 # function to derive shapley values for trained model
-def shapleyValues(year,dataPath,inputVars,modelPath,treeName,targetName,target,correctedValues,updateInput=False,underSample=False):
+def shapleyValues(year,pathNameDict,inputVars,modelPath,targetName,target,correctedValues,updateInput=False,underSample=False):
     
     # get inputs
-    #  ~x,y,inputVars=getInputArray_allBins_nomDistr(dataPath,inputVars,targetName,target,treeName,update=updateInput)
-    train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals = getInputArray_allBins_nomDistr(year,dataPath,inputVars,targetName,target,treeName,update=updateInput,underSample=underSample)
+    train_x, val_x, test_x, train_y, val_y, test_y, train_metVals, val_metVals, test_metVals = getInputArray_allBins_nomDistr(year,pathNameDict,inputVars,targetName,target,update=updateInput,underSample=underSample)
     
     # use only n events for deriving shapley values (full statistics takes way too long!)
     x_test=train_x.sample(n=10000)
@@ -206,13 +205,29 @@ if __name__ == "__main__":
     if args.version: version = args.version
     if args.mode: mode = args.mode
 
-    sampleNameRoot = "TTbar_amcatnlo"
-    dataPath = "/net/data_cms1b/user/dmeuser/top_analysis/{year}/{version}/minTrees/100.0/Nominal/".format(year=year, version=version)
-    dataPath += sampleNameRoot+"_merged.root"
+    #  ~sampleNameRoot = "TTbar_amcatnlo"
+    #  ~dataPath = "/net/data_cms1b/user/dmeuser/top_analysis/{year}/{version}/minTrees/100.0/Nominal/".format(year=year, version=version)
+    #  ~sampleNameRoot = "TTbar_diLepton_MTOP175p5"
+    #  ~dataPath = "/net/data_cms1b/user/dmeuser/top_analysis/{year}/{version}/minTrees/100.0/MTOP175p5/".format(year=year, version=version)
+    #  ~sampleNameRoot = "TTbar_diLepton_MTOP169p5"
+    #  ~dataPath = "/net/data_cms1b/user/dmeuser/top_analysis/{year}/{version}/minTrees/100.0/MTOP169p5/".format(year=year, version=version)
+    #  ~sampleNameRoot = "TTbar_amcatnlo"
+    #  ~dataPath = "/net/data_cms1b/user/dmeuser/top_analysis/{year}/{version}/minTrees/100.0/removeMetCut/".format(year=year, version=version)
+    #  ~dataPath += sampleNameRoot+"_merged.root"
+    
+    # Dict which stores the path and the datasetname to be used for training (can have multiple entries)
+    pathNameDict = {
+        "TTbar_amcatnlo" : "/net/data_cms1b/user/dmeuser/top_analysis/{year}/{version}/minTrees/100.0/removeMetCut/TTbar_amcatnlo_merged.root".format(year=year, version=version)
+    }
+        
+    # Only run on mumu or emuevents
+    #  ~sampleNameRoot += "_mumu"
+    #  ~sampleNameRoot += "_emu"
         
     # Define Input Variables
-    #  ~inputVars = ["PuppiMET_xy*sin(PuppiMET_xy_phi)", "PuppiMET_xy*cos(PuppiMET_xy_phi)", "MET_xy*sin(MET_xy_phi)", "MET_xy*cos(MET_xy_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "mjj", "Jet1_E", "HT", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)"] # Finalized set of input variables
-    inputVars = ["PuppiMET_xy*sin(PuppiMET_xy_phi)", "PuppiMET_xy*cos(PuppiMET_xy_phi)", "MET_xy*sin(MET_xy_phi)", "MET_xy*cos(MET_xy_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "mjj", "Jet1_E", "HT", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)","DeepMET_reso*sin(DeepMET_reso_phi)","DeepMET_reso*cos(DeepMET_reso_phi)","DeepMET_resp*sin(DeepMET_resp_phi)","DeepMET_resp*cos(DeepMET_resp_phi)"] # Finalized set of input variables with DeepMET
+    inputVars = ["PuppiMET_xy*sin(PuppiMET_xy_phi)", "PuppiMET_xy*cos(PuppiMET_xy_phi)", "MET_xy*sin(MET_xy_phi)", "MET_xy*cos(MET_xy_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "mjj", "Jet1_E", "HT", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)"] # Finalized set of input variables
+    
+    #  ~inputVars = ["PuppiMET_xy*sin(PuppiMET_xy_phi)", "PuppiMET_xy*cos(PuppiMET_xy_phi)", "MET_xy*sin(MET_xy_phi)", "MET_xy*cos(MET_xy_phi)", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "mass_l1l2_allJet", "Jet1_pt*sin(Jet1_phi)", "MHT", "Lep1_pt*cos(Lep1_phi)", "Lep1_pt*sin(Lep1_phi)", "Jet1_pt*cos(Jet1_phi)", "mjj", "Jet1_E", "HT", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)","DeepMET_reso*sin(DeepMET_reso_phi)","DeepMET_reso*cos(DeepMET_reso_phi)","DeepMET_resp*sin(DeepMET_resp_phi)","DeepMET_resp*cos(DeepMET_resp_phi)"] # Finalized set of input variables with DeepMET
     
     #  ~inputVars = ["METunc_Puppi", "PuppiMET*cos(PuppiMET_phi)", "PuppiMET*sin(PuppiMET_phi)", "MET*cos(PFMET_phi)", "MET*sin(PFMET_phi)", "CaloMET", "vecsum_pT_allJet*sin(HT_phi)", "vecsum_pT_allJet*cos(HT_phi)", "Jet1_pt*sin(Jet1_phi)", "Jet1_pt*cos(Jet1_phi)", "MHT", "mass_l1l2_allJet", "Jet2_pt*sin(Jet2_phi)", "Jet2_pt*cos(Jet2_phi)", "mjj", "n_Interactions", "MT2", "Lep2_pt*sin(Lep2_phi)", "dPhiMETleadJet_Puppi", "Lep2_pt*cos(Lep2_phi)", "HT", "dPhiMETleadJet", "dPhiLep1Jet1", "MT", "Lep1_pt*cos(Lep1_phi)", "vecsum_pT_allJet", "dPhiMETnearJet_Puppi", "vecsum_pT_l1l2_allJet", "nJets", "dPhiMETnearJet", "dPhiJet1Jet2", "Jet2_E", "Lep1_pt*sin(Lep1_phi)", "Jet1_E", "dPhiMETlead2Jet_Puppi", "dPhiLep1Lep2", "Lep1_E", "dPhiMETfarJet", "Jet2_eta", "dPhiMETbJet", "dPhiMETfarJet_Puppi", "mLL", "dPhiMETbJet_Puppi", "Lep2_flavor", "Lep2_E", "Jet1_eta", "Lep1_eta", "dPhiMETlead2Jet", "Lep1_flavor", "dPhiLep1bJet", "Lep2_eta", "METsig", "ratio_vecsumpTlep_vecsumpTjet", "looseLeptonVeto"]
     
@@ -236,14 +251,16 @@ if __name__ == "__main__":
     print("lr: ", np.exp(lr),"dout: ", dout, "lamb: ", np.exp(lamb), "batch_size: ",  int(np.round(np.exp(batch))), "nlayer: ", int(np.round(nLayer)), "nodes: ", nodeFac, "alpha: ", alph)
     
     nInputs=int(len(inputVars))
-    modelNr=110
+    modelNr=152
     print("Number of inputs: {}".format(nInputs))
 
 
     if mode==2:
         # plotting shapley values for trained model saved in path "trainedModelPath"
-        trainedModelPath = "trainedModel_Keras/2018/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_DeepReso_2018_20221117-1112genMETweighted"
-        shapleyValues(year,dataPath,inputVars[:nInputs],trainedModelPath,"TTbar_amcatnlo","diff_xy",targets,correctedValues,updateInput=True)
+        trainedModelPath = "trainedModel_Keras/2018/2D/Inlusive_noMetCut_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20230111-1004genMETweighted"
+        shapleyValues(year,pathNameDict,inputVars[:nInputs],trainedModelPath,"diff_xy",targets,correctedValues,updateInput=True)
     else: 
         # training DNN with network parameters defined above
-        trainKeras(year,dataPath,inputVars[:nInputs],"Inlusive_amcatnlo_xyComponent_JetLepXY_50EP","TTbar_amcatnlo","diff_xy",targets,correctedValues,np.exp(lr),dout,np.exp(lamb),int(np.round(np.exp(batch))),int(np.round(nLayer)),nodeFac,alph,nInputs,updateInput=True,genMETweighted=True,plotOutputs=True,modelNr=modelNr,plotPurity=False)
+        #  ~trainKeras(year,pathNameDict,inputVars[:nInputs],"Inlusive_noMetCut_amcatnlo_xyComponent_JetLepXY_50EP","diff_xy",targets,correctedValues,np.exp(lr),dout,np.exp(lamb),int(np.round(np.exp(batch))),int(np.round(nLayer)),nodeFac,alph,nInputs,updateInput=True,genMETweighted=True,plotOutputs=True,modelNr=modelNr,plotPurity=False)
+        trainKeras(year,pathNameDict,inputVars[:nInputs],"Inlusive_noMetCut_genMETweight600enlarge_amcatnlo_xyComponent_JetLepXY_50EP","diff_xy",targets,correctedValues,np.exp(lr),dout,np.exp(lamb),int(np.round(np.exp(batch))),int(np.round(nLayer)),nodeFac,alph,nInputs,updateInput=True,genMETweighted=True,plotOutputs=True,modelNr=modelNr,plotPurity=False)
+        #  ~trainKeras(year,pathNameDict,inputVars[:nInputs],"Inlusive_noMetCut_genMETweight600_amcatnlo_xyComponent_JetLepXY_50EP","diff_xy",targets,correctedValues,np.exp(lr),dout,np.exp(lamb),int(np.round(np.exp(batch))),int(np.round(nLayer)),nodeFac,alph,nInputs,updateInput=True,genMETweighted=True,plotOutputs=True,modelNr=modelNr,plotPurity=False)
