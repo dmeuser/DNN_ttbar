@@ -202,10 +202,8 @@ def print_targets(year,pathNameDict,inputVars,modelPath,targetName,target,title,
 def plotRes_vs_X(data_x,saveName,xVar,xLabel,xBins,year,modelPath,testRunString):
     print("weighted plots")
     xBins2 = xBins      # needed for plotting bins
-    xBins = xBins[:-1]  # needed for digitzing panda df
+    xBins = xBins[1:-1]  # needed for digitzing panda df
     data_x["bin"] = np.digitize(data_x[xVar],bins=xBins)
-    #  ~print(data_x[["bin", "genMET"]])
-    #  ~print(data_x.groupby("bin").mean())
     data_x["both_DNN"] = [i for i in zip(data_x["genMET-DNN_MET"], data_x["SF"])]
     data_x["both_Puppi"] = [i for i in zip(data_x["genMET-PuppiMET_xy"], data_x["SF"])]
     data_x["both_PF"] = [i for i in zip(data_x["genMET-MET_xy"], data_x["SF"])]
@@ -235,40 +233,61 @@ def plotRes_vs_X(data_x,saveName,xVar,xLabel,xBins,year,modelPath,testRunString)
     
     # derive half bin width for plotting
     bindwith_halfs = []
-    for i in range(len(xBins)):
+    for i in range(len(xBins)+1):
         bindwith_halfs.append((xBins2[i+1]-xBins2[i])/2.)
     
     plt.figure()
-    plt.errorbar(xBins+bindwith_halfs, res_DNN_MET["meanFunc2d"], yerr=res_DNN_MET["meanErr2d"], color="b", label=None, ls="none", capsize=3)
+    plt.errorbar(xBins2[:-1]+bindwith_halfs, res_DNN_MET["meanFunc2d"], yerr=res_DNN_MET["meanErr2d"], color="b", label=None, ls="none", capsize=3)
     #  ~print(res_DNN_MET["meanFunc2d"], res_DNN_MET["meanFunc2d"].shape)
     #  ~plt.stairs(res_DNN_MET["meanFunc2d"], edges=binsMET, color="b", linewidth=1, where="post", label="DNN mean")
     plt.step(xBins2, np.append(res_DNN_MET["meanFunc2d"].to_numpy(), res_DNN_MET["meanFunc2d"].to_numpy()[-1]), color="b", linewidth=1, where="post", label=r"DNN $\mu$")
     plt.step(xBins2, np.append(res_DNN_MET["rmsFunc2d"].to_numpy(), res_DNN_MET["rmsFunc2d"].to_numpy()[-1]), color="b", linewidth=1, where="post", linestyle="--", label=r"DNN $\sigma$")
     
-    plt.errorbar(xBins+bindwith_halfs, res_PuppiMET_xy["meanFunc2d"], yerr=res_PuppiMET_xy["meanErr2d"], color="r", label=None, ls="none", capsize=3)
+    plt.errorbar(xBins2[:-1]+bindwith_halfs, res_PuppiMET_xy["meanFunc2d"], yerr=res_PuppiMET_xy["meanErr2d"], color="r", label=None, ls="none", capsize=3)
     plt.step(xBins2, np.append(res_PuppiMET_xy["meanFunc2d"].to_numpy(), res_PuppiMET_xy["meanFunc2d"].to_numpy()[-1]), color="r", linewidth=1, where="post", label=r"PUPPI $\mu$")
     plt.step(xBins2, np.append(res_PuppiMET_xy["rmsFunc2d"].to_numpy(), res_PuppiMET_xy["rmsFunc2d"].to_numpy()[-1]), color="r", linewidth=1, where="post", linestyle="--", label=r"PUPPI $\sigma$")
     
-    plt.errorbar(xBins+bindwith_halfs, res_PFMET_xy["meanFunc2d"], yerr=res_PFMET_xy["meanErr2d"], color="lime", label=None, ls="none", capsize=3)
-    plt.step(xBins2, np.append(res_PFMET_xy["meanFunc2d"].to_numpy(), res_PFMET_xy["meanFunc2d"].to_numpy()[-1]), color="lime", linewidth=1, where="post", label="PF $\mu$")
-    plt.step(xBins2, np.append(res_PFMET_xy["rmsFunc2d"].to_numpy(), res_PFMET_xy["rmsFunc2d"].to_numpy()[-1]), color="lime", linewidth=1, where="post", linestyle="--", label="PF $\sigma$")
+    plt.errorbar(xBins2[:-1]+bindwith_halfs, res_PFMET_xy["meanFunc2d"], yerr=res_PFMET_xy["meanErr2d"], color="forestgreen", label=None, ls="none", capsize=3)
+    plt.step(xBins2, np.append(res_PFMET_xy["meanFunc2d"].to_numpy(), res_PFMET_xy["meanFunc2d"].to_numpy()[-1]), color="forestgreen", linewidth=1, where="post", label="PF $\mu$")
+    plt.step(xBins2, np.append(res_PFMET_xy["rmsFunc2d"].to_numpy(), res_PFMET_xy["rmsFunc2d"].to_numpy()[-1]), color="forestgreen", linewidth=1, where="post", linestyle="--", label="PF $\sigma$")
     
-    plt.errorbar(xBins+bindwith_halfs, res_DeepMETreso["meanFunc2d"], yerr=res_DeepMETreso["meanErr2d"], color="orange", label=None, ls="none", capsize=3)
-    plt.step(xBins2, np.append(res_DeepMETreso["meanFunc2d"].to_numpy(), res_DeepMETreso["meanFunc2d"].to_numpy()[-1]), color="orange", linewidth=1, where="post", label="DeepReso $\mu$")
-    plt.step(xBins2, np.append(res_DeepMETreso["rmsFunc2d"].to_numpy(), res_DeepMETreso["rmsFunc2d"].to_numpy()[-1]), color="orange", linewidth=1, where="post", linestyle="--", label="DeepReso $\sigma$")
+    #  ~plt.errorbar(xBins2[:-1]+bindwith_halfs, res_DeepMETreso["meanFunc2d"], yerr=res_DeepMETreso["meanErr2d"], color="orange", label=None, ls="none", capsize=3)
+    #  ~plt.step(xBins2, np.append(res_DeepMETreso["meanFunc2d"].to_numpy(), res_DeepMETreso["meanFunc2d"].to_numpy()[-1]), color="orange", linewidth=1, where="post", label="DeepReso $\mu$")
+    #  ~plt.step(xBins2, np.append(res_DeepMETreso["rmsFunc2d"].to_numpy(), res_DeepMETreso["rmsFunc2d"].to_numpy()[-1]), color="orange", linewidth=1, where="post", linestyle="--", label="DeepReso $\sigma$")
     
-    plt.errorbar(xBins+bindwith_halfs, res_DeepMETresp["meanFunc2d"], yerr=res_DeepMETresp["meanErr2d"], color="gray", label=None, ls="none", capsize=3)
-    plt.step(xBins2, np.append(res_DeepMETresp["meanFunc2d"].to_numpy(), res_DeepMETresp["meanFunc2d"].to_numpy()[-1]), color="gray", linewidth=1, where="post", label="DeepResp $\mu$")
-    plt.step(xBins2, np.append(res_DeepMETresp["rmsFunc2d"].to_numpy(), res_DeepMETresp["rmsFunc2d"].to_numpy()[-1]), color="gray", linewidth=1, where="post", linestyle="--", label="DeepResp $\sigma$")
+    #  ~plt.errorbar(xBins2[:-1]+bindwith_halfs, res_DeepMETresp["meanFunc2d"], yerr=res_DeepMETresp["meanErr2d"], color="gray", label=None, ls="none", capsize=3)
+    #  ~plt.step(xBins2, np.append(res_DeepMETresp["meanFunc2d"].to_numpy(), res_DeepMETresp["meanFunc2d"].to_numpy()[-1]), color="gray", linewidth=1, where="post", label="DeepResp $\mu$")
+    #  ~plt.step(xBins2, np.append(res_DeepMETresp["rmsFunc2d"].to_numpy(), res_DeepMETresp["rmsFunc2d"].to_numpy()[-1]), color="gray", linewidth=1, where="post", linestyle="--", label="DeepResp $\sigma$")
     
-    plt.ylabel(r"$p_{\rm T}^{\rm miss, gen}-p_{\rm T}^{\rm miss, reco}$ (GeV)")
+    plt.ylabel(r"$\rm gen. p_{\rm T}^{\rm miss}-\rm rec. p_{\rm T}^{\rm miss}$ (GeV)")
     plt.xlabel(xLabel)
     plt.grid()
-    plt.legend(ncol=3)
-    plt.ylim(-40,60)
+    plt.legend(ncol=3,loc=3)
+    plt.ylim(-50,60)
+    plt.xlim(xBins2[0],xBins[-1]+2*bindwith_halfs[-1])
     makeCMStitle(year)
     plt.tight_layout(pad=0.1)
     plt.savefig("outputComparison/"+year+"/2D/"+modelPath.split("/")[-1]+testRunString+"/MeanDiff_vs_"+xVar+"_"+saveName+".pdf")
+    
+    # only DNN and puppi comparison
+    plt.figure()
+    plt.errorbar(xBins2[:-1]+bindwith_halfs, res_DNN_MET["meanFunc2d"], yerr=res_DNN_MET["meanErr2d"], color="b", label=None, ls="none", capsize=3)
+    plt.step(xBins2, np.append(res_DNN_MET["meanFunc2d"].to_numpy(), res_DNN_MET["meanFunc2d"].to_numpy()[-1]), color="b", linewidth=1, where="post", label=r"DNN $\mu$")
+    plt.step(xBins2, np.append(res_DNN_MET["rmsFunc2d"].to_numpy(), res_DNN_MET["rmsFunc2d"].to_numpy()[-1]), color="b", linewidth=1, where="post", linestyle="--", label=r"DNN $\sigma$")
+    
+    plt.errorbar(xBins2[:-1]+bindwith_halfs, res_PuppiMET_xy["meanFunc2d"], yerr=res_PuppiMET_xy["meanErr2d"], color="r", label=None, ls="none", capsize=3)
+    plt.step(xBins2, np.append(res_PuppiMET_xy["meanFunc2d"].to_numpy(), res_PuppiMET_xy["meanFunc2d"].to_numpy()[-1]), color="r", linewidth=1, where="post", label=r"PUPPI $\mu$")
+    plt.step(xBins2, np.append(res_PuppiMET_xy["rmsFunc2d"].to_numpy(), res_PuppiMET_xy["rmsFunc2d"].to_numpy()[-1]), color="r", linewidth=1, where="post", linestyle="--", label=r"PUPPI $\sigma$")
+    
+    plt.ylabel(r"$\rm gen. p_{\rm T}^{\rm miss}-\rm rec. p_{\rm T}^{\rm miss}$ (GeV)")
+    plt.xlabel(xLabel)
+    plt.grid()
+    plt.legend(ncol=2,loc=3)
+    plt.ylim(-50,60)
+    plt.xlim(xBins2[0],xBins[-1]+2*bindwith_halfs[-1])
+    makeCMStitle(year)
+    plt.tight_layout(pad=0.1)
+    plt.savefig("outputComparison/"+year+"/2D/"+modelPath.split("/")[-1]+testRunString+"/MeanDiff_vs_"+xVar+"_"+saveName+"_onlyDNNvsPUPPI.pdf")
     
 
 def plot_Output(year,pathNameDict,inputVars,modelPath,targetName,target,correctedValues,title,modelNr,updateInput=False,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,sampleLabel="",noTrainSplitting=False,testRun=False):
@@ -305,7 +324,7 @@ def plot_Output(year,pathNameDict,inputVars,modelPath,targetName,target,correcte
     
     for i_sample,data_x in enumerate(evalArr):
         SF_weights = data_x["SF"]
-        
+                
         # Derive x and y component of genMET and DNN MET
         data_x["genMET_X"]=data_x[correctedValues[0]]-data_x[target[0]]
         data_x["DNN_MET_X"]=data_x[correctedValues[0]]-data_x["DNN_1"]
@@ -350,9 +369,9 @@ def plot_Output(year,pathNameDict,inputVars,modelPath,targetName,target,correcte
         tempMeanDeepRespPhi,tempStdDeepRespPhi = mean_std_SF(data_x["dPhi_DeepMETresp_gen"],data_x["SF"])
         
         # Plot resolution in pT
-        min_x=-150
-        max_x=150
-        binsN=200
+        min_x=-200
+        max_x=200
+        binsN=101
         
         plt.figure()
         plt.rc('axes', labelsize=16)
@@ -360,19 +379,19 @@ def plot_Output(year,pathNameDict,inputVars,modelPath,targetName,target,correcte
         plt.rc('ytick', labelsize=12)
         plt.hist(data_x["genMET-DNN_MET"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False,weights=data_x["SF"], color="b", histtype=u'step', linewidth=2.)
         plt.hist(data_x["genMET-PuppiMET_xy"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False,weights=data_x["SF"], color="r", histtype=u'step', linewidth=2.)
-        plt.hist(data_x["genMET-MET_xy"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False,weights=data_x["SF"], color="lime", histtype=u'step', linewidth=2.)
+        plt.hist(data_x["genMET-MET_xy"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False,weights=data_x["SF"], color="forestgreen", histtype=u'step', linewidth=2.)
         plt.hist(data_x["genMET-DeepMETreso"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False,weights=data_x["SF"], color="orange", histtype=u'step', linewidth=2.)
         plt.hist(data_x["genMET-DeepMETresp"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False,weights=data_x["SF"], color="gray", histtype=u'step', linewidth=2.)
         plt.step([-100,-99], [0., 0.], alpha=0.7, color="blue",label="DNN:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanDNN, tempStdDNN), linewidth=2.)
-        plt.step([-100,-99], [0., 0.], alpha=0.7, color="red",label="Puppi:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanPuppi, tempStdPuppi), linewidth=2.)
-        plt.step([-100,-99], [0., 0.], alpha=0.7, color="lime",label="PF:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanPF, tempStdPF), linewidth=2.)
+        plt.step([-100,-99], [0., 0.], alpha=0.7, color="red",label="PUPPI:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanPuppi, tempStdPuppi), linewidth=2.)
+        plt.step([-100,-99], [0., 0.], alpha=0.7, color="forestgreen",label="PF:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanPF, tempStdPF), linewidth=2.)
         plt.step([-100,-99], [0., 0.], alpha=0.7, color="orange",label="DeepReso:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanDeepReso, tempStdDeepReso), linewidth=2.)
         plt.step([-100,-99], [0., 0.], alpha=0.7, color="gray",label="DeepResp:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanDeepResp, tempStdDeepResp), linewidth=2.)
         plt.axvline(0, color="black", linewidth=1)
-        plt.xlim(-149,149)
+        plt.xlim(min_x+1,max_x-1)
         ax = plt.gca()
         ax.text(0.05, 0.95, sampleLabel, transform=ax.transAxes)
-        plt.xlabel(r"$p_{\rm T}^{\rm miss, gen} - p_{\rm T}^{\rm miss, reco}$ (GeV)")
+        plt.xlabel(r"$\rm gen. p_{\rm T}^{\rm miss}-\rm rec. p_{\rm T}^{\rm miss}$ (GeV)")
         plt.ylabel("Events")
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0),useMathText=True)
         ax.get_yaxis().get_offset_text().set_x(-0.075)
@@ -391,9 +410,9 @@ def plot_Output(year,pathNameDict,inputVars,modelPath,targetName,target,correcte
         tempMeanDeepReso_genMET400,tempStdDeepReso_genMET400 = mean_std_SF(data_x_genMET400["genMET-DeepMETreso"],data_x_genMET400["SF"])        
         tempMeanDeepResp_genMET400,tempStdDeepResp_genMET400 = mean_std_SF(data_x_genMET400["genMET-DeepMETresp"],data_x_genMET400["SF"])
         
-        min_x=-150
-        max_x=150
-        binsN=200
+        min_x=-200
+        max_x=200
+        binsN=101
         
         plt.figure()
         plt.rc('axes', labelsize=16)
@@ -401,19 +420,19 @@ def plot_Output(year,pathNameDict,inputVars,modelPath,targetName,target,correcte
         plt.rc('ytick', labelsize=12)
         plt.hist(data_x_genMET400["genMET-DNN_MET"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False,weights=data_x_genMET400["SF"], color="b", histtype=u'step', linewidth=2.)
         plt.hist(data_x_genMET400["genMET-PuppiMET_xy"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False,weights=data_x_genMET400["SF"], color="r", histtype=u'step', linewidth=2.)
-        plt.hist(data_x_genMET400["genMET-MET_xy"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False,weights=data_x_genMET400["SF"], color="lime", histtype=u'step', linewidth=2.)
+        plt.hist(data_x_genMET400["genMET-MET_xy"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False,weights=data_x_genMET400["SF"], color="forestgreen", histtype=u'step', linewidth=2.)
         plt.hist(data_x_genMET400["genMET-DeepMETreso"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False,weights=data_x_genMET400["SF"], color="orange", histtype=u'step', linewidth=2.)
         plt.hist(data_x_genMET400["genMET-DeepMETresp"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False,weights=data_x_genMET400["SF"], color="gray", histtype=u'step', linewidth=2.)
         plt.step([-100,-99], [0., 0.], alpha=0.7, color="blue",label="DNN:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanDNN_genMET400, tempStdDNN_genMET400), linewidth=2.)
-        plt.step([-100,-99], [0., 0.], alpha=0.7, color="red",label="Puppi:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanPuppi_genMET400, tempStdPuppi_genMET400), linewidth=2.)
-        plt.step([-100,-99], [0., 0.], alpha=0.7, color="lime",label="PF:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanPF_genMET400, tempStdPF_genMET400), linewidth=2.)
+        plt.step([-100,-99], [0., 0.], alpha=0.7, color="red",label="PUPPI:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanPuppi_genMET400, tempStdPuppi_genMET400), linewidth=2.)
+        plt.step([-100,-99], [0., 0.], alpha=0.7, color="forestgreen",label="PF:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanPF_genMET400, tempStdPF_genMET400), linewidth=2.)
         plt.step([-100,-99], [0., 0.], alpha=0.7, color="orange",label="DeepReso:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanDeepReso_genMET400, tempStdDeepReso_genMET400), linewidth=2.)
         plt.step([-100,-99], [0., 0.], alpha=0.7, color="gray",label="DeepResp:\n$\mu=${:.2f}$\,$GeV $\sigma=${:.2f}$\,$GeV".format(tempMeanDeepResp_genMET400, tempStdDeepResp_genMET400), linewidth=2.)
         plt.axvline(0, color="black", linewidth=1)
-        plt.xlim(-149,149)
+        plt.xlim(min_x+1,max_x-1)
         ax = plt.gca()
         ax.text(0.05, 0.95, sampleLabel+"(genMET>400 GeV)", transform=ax.transAxes)
-        plt.xlabel(r"$p_{\rm T}^{\rm miss, gen} - p_{\rm T}^{\rm miss, reco}$ (GeV)")
+        plt.xlabel(r"$\rm gen. p_{\rm T}^{\rm miss}-\rm rec. p_{\rm T}^{\rm miss}$ (GeV)")
         plt.ylabel("Events")
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0),useMathText=True)
         ax.get_yaxis().get_offset_text().set_x(-0.075)
@@ -429,23 +448,23 @@ def plot_Output(year,pathNameDict,inputVars,modelPath,targetName,target,correcte
         min_x = np.min(data_x["dPhi_Puppi_gen"])
         max_x = np.max(data_x["dPhi_Puppi_gen"])
         
-        binsN=200
+        binsN=101
         plt.figure()
         plt.hist(data_x["dPhi_DNN_gen"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False, color="b",weights=data_x["SF"], histtype=u'step', linewidth=2.)
         plt.hist(data_x["dPhi_Puppi_gen"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False, color="r",weights=data_x["SF"], histtype=u'step', linewidth=2.)
-        plt.hist(data_x["dPhi_PF_gen"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False, color="lime",weights=data_x["SF"], histtype=u'step', linewidth=2.)
+        plt.hist(data_x["dPhi_PF_gen"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False, color="forestgreen",weights=data_x["SF"], histtype=u'step', linewidth=2.)
         plt.hist(data_x["dPhi_DeepMETreso_gen"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False, color="orange",weights=data_x["SF"], histtype=u'step', linewidth=2.)
         plt.hist(data_x["dPhi_DeepMETresp_gen"],alpha=0.7,bins=binsN,range=(min_x,max_x),density=False, color="gray",weights=data_x["SF"], histtype=u'step', linewidth=2.)
         plt.step([-100,-99], [0., 0.], alpha=0.7, color="blue",label="DNN:\n$\mu=${:.2f} $\sigma=${:.2f}".format(tempMeanDNNPhi, tempStdDNNPhi), linewidth=2.)
-        plt.step([-100,-99], [0., 0.], alpha=0.7, color="red",label="Puppi:\n$\mu=${:.2f} $\sigma=${:.2f}".format(tempMeanPuppiPhi, tempStdPuppiPhi), linewidth=2.)
-        plt.step([-100,-99], [0., 0.], alpha=0.7, color="lime",label="PF:\n$\mu=${:.2f} $\sigma=${:.2f}".format(tempMeanPFPhi, tempStdPFPhi), linewidth=2.)
+        plt.step([-100,-99], [0., 0.], alpha=0.7, color="red",label="PUPPI:\n$\mu=${:.2f} $\sigma=${:.2f}".format(tempMeanPuppiPhi, tempStdPuppiPhi), linewidth=2.)
+        plt.step([-100,-99], [0., 0.], alpha=0.7, color="forestgreen",label="PF:\n$\mu=${:.2f} $\sigma=${:.2f}".format(tempMeanPFPhi, tempStdPFPhi), linewidth=2.)
         plt.step([-100,-99], [0., 0.], alpha=0.7, color="orange",label="DeepReso:\n$\mu=${:.2f} $\sigma=${:.2f}".format(tempMeanDeepResoPhi, tempStdDeepResoPhi), linewidth=2.)
         plt.step([-100,-99], [0., 0.], alpha=0.7, color="gray",label="DeepResop:\n$\mu=${:.2f} $\sigma=${:.2f}".format(tempMeanDeepRespPhi, tempStdDeepRespPhi), linewidth=2.)
         plt.axvline(0, color="black", linewidth=1)
         plt.xlim(-1.6,1.6)
         ax = plt.gca()
         ax.text(0.05, 0.95, sampleLabel, transform=ax.transAxes)
-        plt.xlabel(r"$\Delta\Phi(p_{\rm T}^{\rm miss, gen},\,p_{\rm T}^{\rm miss, reco})$")
+        plt.xlabel(r"$\rm\Delta\phi\rm(gen. p_{\rm T}^{\rm miss},\,rec. p_{\rm T}^{\rm miss})$")
         plt.ylabel("Events")
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0),useMathText=True)
         ax.get_yaxis().get_offset_text().set_x(-0.075)
@@ -457,23 +476,28 @@ def plot_Output(year,pathNameDict,inputVars,modelPath,targetName,target,correcte
 
         
         # Compare mean diff as a function of genMET
-        plotRes_vs_X(data_x,sampleNames[i_sample]+treeName+"_"+str(modelNr),"genMET",r"$p_{\rm T}^{\rm miss, gen}$ (GeV)",np.append(np.linspace(0,400,21),[450,500,550,600]),year,modelPath,testRunString)
-        plotRes_vs_X(data_x,sampleNames[i_sample]+treeName+"_"+str(modelNr),"n_Interactions",r"$n_{vtx}$",np.linspace(0,60,31),year,modelPath,testRunString)
+        plotRes_vs_X(data_x,sampleNames[i_sample]+treeName+"_"+str(modelNr),"genMET",r"$\rm gen. p_{\rm T}^{\rm miss}$ (GeV)",np.append(np.linspace(0,400,21),[450,500,550,600]),year,modelPath,testRunString)
+        plotRes_vs_X(data_x,sampleNames[i_sample]+treeName+"_"+str(modelNr),"n_Interactions",r"$\rm N_{vtx}$",np.linspace(10,60,26),year,modelPath,testRunString)
+        #  ~plotRes_vs_X(data_x,sampleNames[i_sample]+treeName+"_"+str(modelNr),"n_Interactions",r"$\rm N_{vtx}$",np.linspace(0,60,31),year,modelPath,testRunString)
 
         # Plot comparison between nominal and reweighted genMET distribution
         if (i_sample==0 and genMETweighted):
-            fig, ax = plt.subplots(1,1, figsize=(5,3.75))
-            ax.hist(data_x["genMET"], alpha=0.8, color="blue", bins=200, density=True, weights=data_x["genMETweight"], histtype=u'step')
-            ax.hist(data_x["genMET"], alpha=0.8, color="red", bins=200, density=True, weights=SF_weights, histtype=u'step')
+            fig, ax = plt.subplots(1,1, figsize=(5.3,3.75))
+            ax.hist(data_x["genMET"], alpha=0.8, color="blue", bins=100, density=True, weights=data_x["genMETweight"], histtype=u'step')
+            ax.hist(data_x["genMET"], alpha=0.8, color="red", bins=100, density=True, weights=SF_weights, histtype=u'step')
+            
+            
             # for proper legend display as steps, not as boxes
-            ax.step([-100,-99], [0., 0.], alpha=0.8, color="blue", label="reweighted")
-            ax.step([-100,-99], [0., 0.], alpha=0.8, color="red", label="nominal")
-            ax.set_xlim(0,700)
-            ax.set_xlabel(r"$p_{\rm T}^{\rm miss, gen}$ (GeV)")
+            ax.step([-100,-99], [0., 0.], alpha=0.8, color="blue", label="Reweighted")
+            ax.step([-100,-99], [0., 0.], alpha=0.8, color="red", label="Nominal")
+            plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+            ax.get_yaxis().get_offset_text().set_x(-0.13)
+            ax.set_xlim(0,600)
+            ax.set_xlabel(r"$\rm gen. p_{\rm T}^{\rm miss}$ (GeV)")
             ax.set_ylabel(r"normalized distribution")
             plt.legend()
             makeCMStitle(year)
-            plt.tight_layout(pad=0.12)
+            plt.tight_layout(pad=0.1)
             plt.savefig(storingPath+"/genMET_distr_"+sampleNames[i_sample]+"_"+str(modelNr)+"_fin.pdf")
         
         # Write DNN description
@@ -492,9 +516,10 @@ def makeCMStitle(year):
         lumi="59.8"
     ax = plt.gca()
     ax.text(0.,1.,"CMS",transform=ax.transAxes,horizontalalignment='left',verticalalignment='bottom', weight="bold", fontsize=14)
-    ax.text(0.,1.,r"           $\,$Simulation$\,\bullet\,$Private work",transform=ax.transAxes,horizontalalignment='left',verticalalignment='bottom', style="italic", fontsize=10, color=(0.3,0.3,0.3))
+    #  ~ax.text(0.,1.,r"           $\,$Simulation$\,\bullet\,$Private work",transform=ax.transAxes,horizontalalignment='left',verticalalignment='bottom', style="italic", fontsize=10, color=(0.3,0.3,0.3))
+    ax.text(0.,1.,r"           $\,$Simulation$\,\bullet\,$Work in progress",transform=ax.transAxes,horizontalalignment='left',verticalalignment='bottom', style="italic", fontsize=9.5, color=(0.3,0.3,0.3))
     #  ~ax.text(0.,1.,r"Private Work (CMS Simulation)",transform=ax.transAxes,horizontalalignment='left',verticalalignment='bottom', style="italic", fontsize=10, color=(0.3,0.3,0.3))
-    ax.text(1.,1.,lumi+r"$\,$fb${}^{-1}\,(13\,$TeV)",transform=ax.transAxes,horizontalalignment='right',verticalalignment='bottom',fontsize=12)
+    ax.text(1.,1.,lumi+r"$\,$fb${}^{-1}\,(13\,$TeV)",transform=ax.transAxes,horizontalalignment='right',verticalalignment='bottom',fontsize=11)
 
 
 def plot_Purity(year,pathNameDict,inputVars,modelPath,targetName,target,correctedValues,title,modelNr,updateInput=False,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,testRun=False):
@@ -614,7 +639,7 @@ def plot_Purity(year,pathNameDict,inputVars,modelPath,targetName,target,correcte
             mesh1 = ax.pcolormesh(Xbins, Ybins, histo2D_Both/histo2D_Gen, vmin=0., vmax=vmax)
             for i,phiarr in enumerate(histo2D_Both/histo2D_Gen):
                 for j,vali in enumerate(phiarr):
-                    ax.text(metBinsC[j], dphiBinsC[i], "{:.2f}".format(vali)[1:], fontsize=12, color="red", fontweight="bold",  horizontalalignment='center', verticalalignment='center')
+                    ax.text(metBinsC[j], dphiBinsC[i], "{:.2f}".format(vali)[1:], fontsize=12, color="red", weight="bold",  horizontalalignment='center', verticalalignment='center')
             cbar = fig.colorbar(mesh1, ax=ax, pad=0.02)
             cbar.set_label("Stability")
             #  ~ax.set_ylabel(r"$min[\Delta\phi(p_{\rm T}^{\nu\nu},\ell)]$")
@@ -634,15 +659,16 @@ def plot_Purity(year,pathNameDict,inputVars,modelPath,targetName,target,correcte
             mesh1 = ax.pcolormesh(Xbins+0.5, Ybins+0.5, histoResponse, vmin=0.01, vmax=vmax)
             for i,row in enumerate(histoResponse):
                 for j,vali in enumerate(row):
-                    ax.text(binsC[j]+0.5, binsC[i]+0.5, "{:.2f}".format(vali)[1:], fontsize=9.5, color="red", horizontalalignment='center', verticalalignment='center')
+                    ax.text(binsC[j]+0.5, binsC[i]+0.5, "{:.2f}".format(vali)[1:], fontsize=12.5, color="red", horizontalalignment='center', verticalalignment='center')
             cbar = fig.colorbar(mesh1, ax=ax, pad=0.02)
+            plt.rcParams.update({'font.size': 14})
             cbar.set_label("Line Normalized Distribution")
             ax.set_ylabel(r"Detector level bin")
             ax.set_xlabel(r"Particle level bin")
-            ax.axhline(len(metBins)-0.5, color="lime", linestyle="dashed")
-            ax.axhline((len(metBins))*2-1.5, color="lime", linestyle="dashed")
-            ax.axvline(len(metBins)-0.5, color="lime", linestyle="dashed")
-            ax.axvline((len(metBins))*2-1.5, color="lime", linestyle="dashed")
+            ax.axhline(len(metBins)-0.5, color="forestgreen", linestyle="dashed")
+            ax.axhline((len(metBins))*2-1.5, color="forestgreen", linestyle="dashed")
+            ax.axvline(len(metBins)-0.5, color="forestgreen", linestyle="dashed")
+            ax.axvline((len(metBins))*2-1.5, color="forestgreen", linestyle="dashed")
             makeCMStitle(year)
             plt.tight_layout(pad=0.1)
             plt.savefig(storingPath+"/{dnnName}_Response_{sample}_{nr}.pdf".format(model=modelPath.split("/")[-1], dnnName=dnnName, sample=sampName, nr=str(modelNr)))
@@ -696,12 +722,12 @@ if __name__ == "__main__":
     
     #  ~sampleNameRoot = "SingleTop"
     #  ~dataPath += sampleNameRoot+"_merged.root"
-    #  ~sampleLabel = "Single t"
+    #  ~sampleLabel = "Single top"
     #  ~noTrainSplitting = True
     
     #  ~sampleNameRoot = "T2tt_525_350"
     #  ~dataPath += sampleNameRoot+"_1.root"
-    #  ~sampleLabel = "T2tt_525_350"
+    #  ~sampleLabel = "BSM"
     #  ~noTrainSplitting = True
     
     #  ~sampleNameRoot = "T2tt_525_438"
@@ -771,17 +797,23 @@ if __name__ == "__main__":
     #  ~modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_DeepReso_2018_20221117-1112genMETweighted"
     #  ~modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_MTOP169p5_xyComponent_JetLepXY_50EP__diff_xy_2018_20221130-1603genMETweighted"
     #  ~modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_MTOP175p5_xyComponent_JetLepXY_50EP__diff_xy_2018_20221130-1154genMETweighted"
-    modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_noMetCut_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20230111-1004genMETweighted"
+    #  ~modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_noMetCut_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20230111-1004genMETweighted"
+    #  ~modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_noMetCut_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20230607-1535"
+    modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_noMetCut_genMETweight500enlarge_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2018_20230315-1648genMETweighted"
+
     
     #2017
     #  ~modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2017_20220621-1425genMETweighted"
     #  ~modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_noMetCut_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2017_20230206-0940genMETweighted"
+    #  ~modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_noMetCut_genMETweight500enlarge_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2017_20230403-1000genMETweighted"
     
     #2016_preVFP
     #  ~modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_noMetCut_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2016_preVFP_20230206-1026genMETweighted"
+    #  ~modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_noMetCut_genMETweight500enlarge_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2016_preVFP_20230403-1035genMETweighted"
     
-    #2016_preVFP
+    #2016_postVFP
     #  ~modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_noMetCut_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2016_postVFP_20230206-1041genMETweighted"
+    #  ~modelPath = "trainedModel_Keras/"+year+"/2D/Inlusive_noMetCut_genMETweight500enlarge_amcatnlo_xyComponent_JetLepXY_50EP__diff_xy_2016_postVFP_20230403-1018genMETweighted"
     
     nInputs=int(len(inputVars))
 
@@ -799,12 +831,15 @@ if __name__ == "__main__":
     if mode==2:
         # Plotting the Purity, Stability and Response Matrix for the training sample, splitting 99% of the data into training sample for reasonable statistics in high MET bins
         plot_Purity(year,pathNameDict,inputVars[:nInputs],modelPath,"diff_xy",targets,correctedValues,modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False,testRun=args.test)
-        #  ~plot_Purity(year,pathNameDict,inputVars[:nInputs],modelPath,"diff_xy",targets,modelTitle,modelNr,updateInput=False,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
+        #  ~plot_Purity(year,pathNameDict,inputVars[:nInputs],modelPath,"diff_xy",targets,correctedValues,modelTitle,modelNr,updateInput=False,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False,testRun=args.test)
     elif mode==3:
         # Printing some target values of the chosen model, such as the loss or purity in last bin; Not yet updated to incorporate SF_weights
         print_targets(pathNameDict,inputVars[:nInputs],modelPath,"diff_xy",targets,modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False)
     else:
         # Creating Plots of the Network performance, using the same training, validation and test sample as in the training process
-        plot_Output(year,pathNameDict,inputVars[:nInputs],modelPath,"diff_xy",targets,correctedValues,modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False,sampleLabel=sampleLabel,noTrainSplitting=noTrainSplitting,testRun=args.test)
-        #  ~plot_Output(year,pathNameDict,inputVars[:nInputs],modelPath,"diff_xy",targets,correctedValues,modelTitle,modelNr,updateInput=False,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False,sampleLabel=sampleLabel,testRun=args.test)
+        #  ~plot_Output(year,pathNameDict,inputVars[:nInputs],modelPath,"diff_xy",targets,correctedValues,modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False,sampleLabel=sampleLabel,noTrainSplitting=noTrainSplitting,testRun=args.test)
+        
+        #  ~print("!!!!!!!!!!!!!!!!!!!No genMET weighting currently used!!!!!!!!!!!!!!!!!!!!")
+        plot_Output(year,pathNameDict,inputVars[:nInputs],modelPath,"diff_xy",targets,correctedValues,modelTitle,modelNr,updateInput=True,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,sampleLabel=sampleLabel,noTrainSplitting=noTrainSplitting,testRun=args.test)
+        #  ~plot_Output(year,pathNameDict,inputVars[:nInputs],modelPath,"diff_xy",targets,correctedValues,modelTitle,modelNr,updateInput=False,normalize=False,standardize=False,genMETweighted=True,overSample=False,underSample=False,doSmogn=False,sampleLabel=sampleLabel,noTrainSplitting=noTrainSplitting,testRun=args.test)
     

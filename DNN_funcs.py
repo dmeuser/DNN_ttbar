@@ -41,8 +41,8 @@ def meanErr(x):
 def getInputArray_allBins_nomDistr(year,pathNameDict,inputVars,targetName,target,update=False,normalize=False,standardize=False,genMETweighted=False,overSample=False,underSample=False,doSmogn=False,cut="(PuppiMET_xy>0)",noTrainSplitting=False,testRun=False):
     # Defining End of binning and binWidth for genMETreweighting (in GeV)
     #  ~binE = 400
-    #  ~binE = 500
-    binE = 600
+    binE = 500
+    #  ~binE = 600
     binW = 8
         
     appendCount = 0
@@ -101,7 +101,7 @@ def getInputArray_allBins_nomDistr(year,pathNameDict,inputVars,targetName,target
    
         if genMETweighted:
             bins=list(range(0,binE+binW,binW))
-            bins.append(inputFeatures["genMET"].max())
+            bins.append(np.max([inputFeatures["genMET"].max(),binE+binW]))
             labels=list(range(1,len(bins)))
             inputFeatures["genMET_binNR"] = pd.cut(inputFeatures["genMET"], bins=bins, labels=labels)
             sampleWeights=compute_sample_weight("balanced",inputFeatures["genMET_binNR"])
@@ -118,7 +118,7 @@ def getInputArray_allBins_nomDistr(year,pathNameDict,inputVars,targetName,target
             x = x[:100000]
             y = y[:100000]
             metVals = metVals[:100000]
-            sampleWeights = sampleWeights[:100000]
+            if genMETweighted: sampleWeights = sampleWeights[:100000]
         
         # split MC data in training, validation and test samples, x=inputs, y=targets, metVals=other Variable, that are not inputs e.g. genMET
         # if noTrainSplitting, almost all statistics are in training sample, used for plotting of purity/stability/response and for plotting of background samples

@@ -6,7 +6,8 @@ def runCmds_GOF_toys(varName, year, version, nToys=100):
 	iPath = "/net/data_cms1b/user/dmeuser/top_analysis/"+year+"/"+version+"/output_framework/datacards/"+varName+"/"
 	oPath = "/home/home4/institut_1b/dmeuser/top_analysis/DNN_ttbar/RunGOFCondor/CondorGOFsubmits/"+year+"/"+varName+"_files/Results_"+varName+"/"
 	
-	cmd = "combine -M GoodnessOfFit "+iPath+"ttbar_"+varName+".root --algo=saturated --cminDefaultMinimizerStrategy 0 --setParameters r=1 --setParameterRanges r=-2.,2. -m 125 --X-rtd MINIMIZER_MaxCalls=999999999 --cminDefaultMinimizerPrecision 1E-12 --cminPreScan -t "+str(nToys)+" --toysFreq -s -1"
+	#  ~cmd = "combine -M GoodnessOfFit "+iPath+"ttbar_"+varName+".root --algo=saturated --cminDefaultMinimizerStrategy 0 --setParameters r=1 --setParameterRanges r=-2.,2. -m 125 --X-rtd MINIMIZER_MaxCalls=999999999 --cminDefaultMinimizerPrecision 1E-12 --cminPreScan -t "+str(nToys)+" --toysFreq -s -1"
+	cmd = "combine -M GoodnessOfFit "+iPath+"ttbar_"+varName+".root --algo=saturated --cminDefaultMinimizerStrategy 0 --setParameters r=1 --setParameterRanges r=-2.,2. -m 125 --X-rtd MINIMIZER_MaxCalls=999999999 --cminDefaultMinimizerPrecision 1E-12 --cminPreScan --cminPreFit 1 -t "+str(nToys)+" --toysFreq -s -1"
 	#  ~cmd = "combine -M GoodnessOfFit "+iPath+"ttbar_"+varName+".root --algo=AD --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 50.1 --setParameters r=1 --setParameterRanges r=-2.,2. -m 125 --verbose 3 --X-rtd MINIMIZER_MaxCalls=999999999 --cminDefaultMinimizerPrecision 1E-12 --cminPreScan -t "+str(nToys)+" -s -1"
 	print(oPath, cmd)
 	

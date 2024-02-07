@@ -39,8 +39,8 @@ legends = {
     "METunc_Puppi" : "#sigma_{MET}^{Puppi}",
     "PuppiMET_X" : "p_{x}^{miss, old Puppi}",
     "PuppiMET_Y" : "p_{y}^{miss, old Puppi}",
-    "PuppiMET_xy_X" : "p_{x}^{miss, Puppi}",
-    "PuppiMET_xy_Y" : "p_{y}^{miss, Puppi}",
+    "PuppiMET_xy_X" : "PUPPI p_{x}^{miss}",
+    "PuppiMET_xy_Y" : "PUPPI p_{y}^{miss}",
     "MET_X" : "p_{x}^{miss, old PF}",
     "MET_Y" : "p_{y}^{miss, old PF}",
     "MET_xy_X" : "p_{x}^{miss, PF}",
@@ -74,7 +74,8 @@ legends = {
     "DeepMET_reso_X" : "p_{x}^{\rm miss, DReso}",
     "DeepMET_reso_Y" : "p_{y}^{\rm miss, DReso}",
     "DeepMET_resp_X" : "p_{x}^{\rm miss, DResp}",
-    "DeepMET_resp_Y" : "p_{y}^{\rm miss, DResp}"
+    "DeepMET_resp_Y" : "p_{y}^{\rm miss, DResp}",
+    "DNN_MET_pT" : "p^{miss, DNN}"
 }
 
 
@@ -87,7 +88,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if "_VS_" in args.n:
-        legName = legends[args.n.split("_VS_")[0]]+" vs "+legends[args.n.split("_VS_")[1]]
+        legName = legends[args.n.split("_VS_")[0]]+" vs. "+legends[args.n.split("_VS_")[1]]
     else:
         legName = legends[args.n]
     

@@ -159,7 +159,8 @@ def plotGOF(data, toysArr, output_plot_basename, txtTL="", txtTR="", varName="",
     ROOT.TGaxis.SetMaxDigits(4)
     ROOT.TGaxis.SetExponentOffset(-L+.50*L, 0.03, 'y')
 
-    binN = int(float(len(TOYS)) / 10.)
+    #  ~binN = int(float(len(TOYS)) / 10.)
+    binN = int(float(len(TOYS)) / 15.)
     #  ~print(binN)
     #  ~print(len(TOYS))
 
@@ -247,7 +248,7 @@ def plotGOF(data, toysArr, output_plot_basename, txtTL="", txtTR="", varName="",
     cgof.Update()
     # toys_h1.SetTitle(title)
     #  ~toys_h1.SetTitle(';GoF (saturated);Number of MC Toys;')
-    toys_h1.GetXaxis().SetTitle("#lambda_{sat} ("+txtTR+")")
+    toys_h1.GetXaxis().SetTitle("-2ln(#lambda) ["+txtTR+"]")
     toys_h1.GetYaxis().SetTitle("Number of MC Toys")
     toys_h1.SetTitle("")
     toys_h1.GetXaxis().SetLabelSize  (0.045)
@@ -264,8 +265,8 @@ def plotGOF(data, toysArr, output_plot_basename, txtTL="", txtTR="", varName="",
     leg.SetBorderSize(0)
     leg.SetFillColor(0)
     leg.SetTextFont(42)
-    leg.AddEntry(toys_h1, 'toy data', 'lep')
-    leg.AddEntry(data_li, '#lambda_{sat}^{data}'+' = {:.2f}'.format(DATA)   , 'l')
+    leg.AddEntry(toys_h1, 'Toy data', 'lep')
+    leg.AddEntry(data_li, 'obs.'+' = {:.2f}'.format(DATA)   , 'l')
     leg.AddEntry(toys_h2, 'p-value' +' = {:.2f}'.format(P_VALUE), 'f')
 
     if chi2_func:
@@ -307,7 +308,8 @@ def plotGOF(data, toysArr, output_plot_basename, txtTL="", txtTR="", varName="",
 
 def draw_lumi(pad, simulation, drawLumiText, year):
     cmsText = "CMS"
-    extraText = "Private work"
+    #  ~extraText = "Private work"
+    extraText = "Work in progress"
     if year=="2017":
         lumi=41.5
     elif year=="2016_preVFP":

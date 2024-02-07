@@ -43,7 +43,8 @@ if __name__ == "__main__":
 	    #  ~print("\nNo proper variable name given\n")
     
     
-    for n in ["PuppiMET_xy_X_VS_Lep1_pX"]:
+    #  ~for n in ["PuppiMET_xy_X_VS_Lep1_pX"]:
+    for n in ["DNN_MET_pT"]:
     #  ~for n in ["nJets"]:
         plotImpacts_GOF(n, "2018", "v08", makeJson=True, runAsimov=False)
         #  ~plotImpacts_GOF(n, "2018", "v08", makeJson=True, runAsimov=True)

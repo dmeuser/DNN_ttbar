@@ -16,3 +16,4 @@ RunGOFCondor/HTplots/*
 RunGOFCondor/utilities/*
 BayesOptLogs/*
 __pycache__/*
+*.pyc

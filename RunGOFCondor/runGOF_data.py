@@ -14,7 +14,9 @@ def runCmds_GOF_data(varName, year, version):
 	#  ~cmd_dataGOF = "combine -M GoodnessOfFit "+iPath+"ttbar_"+varName+".root --algo=saturated --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --setParameters r=1 --setParameterRanges r=-2.,2. -m 125 --X-rtd MINIMIZER_MaxCalls=999999999 --cminDefaultMinimizerPrecision 1E-12 --cminPreFit 1 --cminPreScan -v 3"
 	#  ~cmd_dataGOF = "combine -M GoodnessOfFit "+iPath+"ttbar_"+varName+".root --algo=saturated --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 50.1 --setParameters r=1 --setParameterRanges r=-2.,2. -m 125 --verbose 3 --X-rtd MINIMIZER_MaxCalls=999999999 --cminDefaultMinimizerPrecision 1E-12 --cminPreScan"
 	
-	cmd_dataGOF = "combine -M GoodnessOfFit "+iPath+"ttbar_"+varName+".root --algo=saturated --cminDefaultMinimizerStrategy 0 --setParameters r=1 --setParameterRanges r=-2.,2. -m 125 --X-rtd MINIMIZER_MaxCalls=999999999 --cminDefaultMinimizerPrecision 1E-12 --cminPreScan"
+	#  ~cmd_dataGOF = "combine -M GoodnessOfFit "+iPath+"ttbar_"+varName+".root --algo=saturated --cminDefaultMinimizerStrategy 0 --setParameters r=1 --setParameterRanges r=-2.,2. -m 125 --X-rtd MINIMIZER_MaxCalls=999999999 --cminDefaultMinimizerPrecision 1E-12 --cminPreScan"
+	
+	cmd_dataGOF = "combine -M GoodnessOfFit "+iPath+"ttbar_"+varName+".root --algo=saturated --cminDefaultMinimizerStrategy 0 --setParameters r=1 --setParameterRanges r=-2.,2. -m 125 --X-rtd MINIMIZER_MaxCalls=999999999 --cminDefaultMinimizerPrecision 1E-12 --cminPreScan --cminPreFit 1"
 	print(oPath)
 	print(cmd_dataGOF)
 	

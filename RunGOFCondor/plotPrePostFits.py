@@ -269,8 +269,8 @@ def get_xsecPulls(varNames, procs):
 		#  ~print(varName)
 		vals = []
 
-		ifile = ROOT.TFile.Open(iPath+shapeFileName)
-		if (not ifile) or ifile.IsZombie() or ifile.TestBit(ROOT.TFile.kRecovered): print("Error, File not known:", iPath+shapeFileName)
+		ifile = TFile.Open(iPath+shapeFileName)
+		if (not ifile) or ifile.IsZombie() or ifile.TestBit(TFile.kRecovered): print("Error, File not known:", iPath+shapeFileName)
 
 		itree = ifile.Get("tree_fit_sb")
 		if not itree:
@@ -363,7 +363,8 @@ legends = {
 	"DeepMET_reso_X" : "p_{x}^{\rm miss, DReso}",
 	"DeepMET_reso_Y" : "p_{y}^{\rm miss, DReso}",
 	"DeepMET_resp_X" : "p_{x}^{\rm miss, DResp}",
-	"DeepMET_resp_Y" : "p_{y}^{\rm miss, DResp}"
+	"DeepMET_resp_Y" : "p_{y}^{\rm miss, DResp}",
+   "DNN_MET_pT" : "p^{miss, DNN}"
 }
 
 if __name__ == '__main__':
@@ -401,8 +402,12 @@ if __name__ == '__main__':
 	#  ~varNames = ["Jet1_pY_VS_Jet1_E", "MET_xy_Y_VS_vecsum_pT_allJet_X", "Jet1_pY", "Jet1_E"]
 	
 	#  ~varNames = ["DeepMET_reso_X"]
-	varNames = ["PuppiMET_xy_X"]
-	binnings = [(-150, 150, 31)]
+	#  ~varNames = ["PuppiMET_xy_X"]
+	#  ~binnings = [(-150, 150, 31)]
+	#  ~varNames = ["DNN_MET_pT"]
+	#  ~binnings = [(0, 500, 20)]
+	varNames = ["PuppiMET_xy_X_VS_Jet1_E"]
+	binnings = [ (0, 29, 30)]
 	
 	for varName, binning in zip(varNames, binnings):
 		iPath = "/net/data_cms1b/user/dmeuser/top_analysis/"+year+"/"+version+"/output_framework/datacards/"+varName+"/"
@@ -431,5 +436,5 @@ if __name__ == '__main__':
 			print(ShapeFromW)
 		
 		drawPrePostHistos(year, iPath+shapeFileName, toPlot, procList, oPath, varName, binning, legName)
-	#  ~plotPulls(varNames)
+	plotPulls(varNames)
 	#  ~plotPvals()

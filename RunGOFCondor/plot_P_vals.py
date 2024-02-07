@@ -13,9 +13,9 @@ def plot_P_Vals(year, version):
         lumi=16.8
     else:
         lumi=59.8
-    #  ~varList = np.array(["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "CaloMET", "MT2", "mjj", "nJets", "Jet1_E", "HT", "Jet2_pX", "Jet2_pY"])
+    varList = np.array(["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "CaloMET", "MT2", "mjj", "nJets", "Jet1_E", "HT", "Jet2_pX", "Jet2_pY"])
     #  ~varList = np.array(["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "CaloMET", "MT2", "mjj", "nJets", "Jet1_E", "HT", "Jet2_pX", "Jet2_pY", "DeepMET_reso_X", "DeepMET_reso_Y", "DeepMET_resp_X", "DeepMET_resp_Y"])
-    varList = np.array(["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "mjj", "Jet1_E", "HT", "Jet2_pX", "Jet2_pY"])
+    #  ~varList = np.array(["PuppiMET_xy_X", "PuppiMET_xy_Y", "MET_xy_X", "MET_xy_Y", "vecsum_pT_allJet_X", "vecsum_pT_allJet_Y", "mass_l1l2_allJet", "Jet1_pY", "MHT", "Lep1_pX", "Lep1_pY", "Jet1_pX", "mjj", "Jet1_E", "HT", "Jet2_pX", "Jet2_pY"])
     
     niceList = np.array([legends[i] for i in varList])
     
@@ -69,27 +69,29 @@ def plot_P_Vals(year, version):
     #plt.tight_layout()
     #  ~plt.savefig("p_vals_histo"+year+".pdf")
     
+    
     #  ~fig, ax = plt.subplots(1,1, figsize=(5,4.5))
-    fig, ax = plt.subplots(1,1, figsize=(5.2,4.7))
+    plt.rcParams.update({'font.size': 11})
+    fig, ax = plt.subplots(1,1, figsize=(6.8,6.3))
     mesh1 = ax.pcolormesh(range(len(varList)+1), range(len(varList)+1), pMat, vmin=0., vmax=100., cmap=plt.get_cmap("viridis"))
     cbar = fig.colorbar(mesh1, ax=ax, pad=0.02)
-    cbar.set_label("p-value (%)")
+    cbar.set_label("p-value (%)", fontsize=14)
     for i,col in enumerate(pMat):
             for j,vali in enumerate(col):
                     if vali<5:
-                            ax.text(xBinC[j]-0.46, yBinC[i]-0.2, "{:.1f}".format(vali), fontsize=6.5, color="red",fontweight="bold")
+                            ax.text(xBinC[j], yBinC[i], "{:.1f}".format(vali), fontsize=7, color="red",fontweight="bold",horizontalalignment='center',verticalalignment='center')
                     #  ~else: 
                             #  ~ax.text(xBinC[j]-0.4, yBinC[i]-0.25, "-"+"{:.2f}".format(vali)[formI+1:], fontsize=12, color="green", fontweight="bold")
     
-    plt.yticks(np.linspace(0.5, len(varList)-0.5, len(varList)), niceList, fontsize=9)
-    plt.xticks(np.linspace(0.5, len(varList)-0.5, len(varList)), niceList, fontsize=9, rotation=90)
+    plt.yticks(np.linspace(0.5, len(varList)-0.5, len(varList)), niceList, fontsize=11)
+    plt.xticks(np.linspace(0.5, len(varList)-0.5, len(varList)), niceList, fontsize=11, rotation=90)
     ax.text(0.,1.,"CMS",transform=ax.transAxes,horizontalalignment='left',verticalalignment='bottom', weight="bold", fontsize=14)
-    ax.text(0.,1.002,r"            Private work",transform=ax.transAxes,horizontalalignment='left',verticalalignment='bottom', style="italic", fontsize=11, color=(0.3,0.3,0.3))
+    ax.text(0.,1.004,r"           Work in progress",transform=ax.transAxes,horizontalalignment='left',verticalalignment='bottom', style="italic", fontsize=11, color=(0.3,0.3,0.3))
     ax.text(1.,1.002,str(lumi)+r"$\,$fb${}^{-1}\,(13\,$TeV)",transform=ax.transAxes,horizontalalignment='right',verticalalignment='bottom',fontsize=12)
     plt.subplots_adjust(left=0.14, right=0.978, top=0.955, bottom=0.155)
     #  ~plt.tight_layout(pad=0.1)
-    plt.savefig("p_val_plots/final_plots/p_vals_"+year+"_lessUnc_final.pdf")
-    #  ~plt.savefig("p_val_plots/final_plots/p_vals_"+year+"_allUnc_final.pdf")
+    #  ~plt.savefig("p_val_plots/final_plots/p_vals_"+year+"_lessUnc_final.pdf")
+    plt.savefig("p_val_plots/final_plots/p_vals_"+year+"_allUnc_final.pdf")
 
 
 
@@ -97,35 +99,35 @@ legends = {
     "METunc_Puppi" : r"$\sigma_{MET}^{Puppi}$",
     "PuppiMET_X" : r"$p_{x}^{miss, old Puppi}$",
     "PuppiMET_Y" : r"$p_{y}^{miss, old Puppi}$",
-    "PuppiMET_xy_X" : r"$p_{x}^{\rm miss, Puppi}$",
-    "PuppiMET_xy_Y" : r"$p_{y}^{\rm miss, Puppi}$",
+    "PuppiMET_xy_X" : r"$\rm PUPPI\;p_{x}^{\rm miss}$",
+    "PuppiMET_xy_Y" : r"$\rm PUPPI\;p_{y}^{\rm miss}$",
     "MET_X" : r"$p_{x}^{\rm miss, old PF}$",
     "MET_Y" : r"$p_{y}^{\rm miss, old PF}$",
-    "MET_xy_X" : r"$p_{x}^{\rm miss, PF}$",
-    "MET_xy_Y" : r"$p_{y}^{\rm miss, PF}$",
+    "MET_xy_X" : r"$\rm PF\;p_{x}^{\rm miss}$",
+    "MET_xy_Y" : r"$\rm PF\;p_{y}^{\rm miss}$",
     "CaloMET_X" : r"$p_{x}^{\rm miss, Calo}$",
     "CaloMET_Y" : r"$p_{y}^{\rm miss, Calo}$",
-    "CaloMET" : r"$p_{\rm T}^{\rm miss, Calo}$",
-    "vecsum_pT_allJet_X" : r"$p_{x}^{all\,\,j}$",
-    "vecsum_pT_allJet_Y" : r"$p_{y}^{all\,\,j}$",
-    "Jet1_pX" : r"$p_{x}^{\,j_1}$",
-    "Jet1_pY" : r"$p_{y}^{\,j_1}$",
-    "MHT" : r"$m_{\rm HT}$",
-    "mass_l1l2_allJet" : r"$m_{l1,l2,all\,j}$",
-    "Jet2_pX" : r"$p_{x}^{\,j_2}$",
-    "Jet2_pY" : r"$p_{y}^{\,j_2}$",
-    "mjj" : r"$m_{jj}$",
+    "CaloMET" : r"$\rm Calo\;p_{\rm T}^{\rm miss}$",
+    "vecsum_pT_allJet_X" : r"$\rm p_{x}^{all\,j}$",
+    "vecsum_pT_allJet_Y" : r"$\rm p_{y}^{all\,j}$",
+    "Jet1_pX" : r"$\rm p_{x}^{j_{1}}$",
+    "Jet1_pY" : r"$\rm p_{y}^{j_{1}}$",
+    "MHT" : r"$\rm m_{all\,j}$",
+    "mass_l1l2_allJet" : r"$\rm m_{ll+all\,j}$",
+    "Jet2_pX" : r"$\rm p_{x}^{j_{2}}$",
+    "Jet2_pY" : r"$\rm p_{y}^{j_{2}}$",
+    "mjj" : r"$\rm m_{jj}$",
     "n_Interactions" : r"$n_{Interactions}$",
-    "MT2" : r"$M_{\rm T2}$",
+    "MT2" : r"$\rm M_{\rm T2}$",
     "dPhiMETleadJet_Puppi" : r"$\Delta\phi(p_{T}^{miss, Puppi}, j_1)$$",
     "Lep2_pX" : r"$p_{x}^{\,l_2}$",
     "Lep2_pY" : r"$p_{y}^{\,l_2}$",
-    "HT" : r"$H_{\rm T}$",    
-    "Lep1_pX" : r"$p_{x}^{\,l_1}$",
-    "Lep1_pY" : r"$p_{y}^{\,l_1}$",
+    "HT" : r"$\rm H_{\rm T}$",    
+    "Lep1_pX" : r"$\rm p_{x}^{l_{1}}$",
+    "Lep1_pY" : r"$\rm p_{y}^{l_{1}}$",
     "vecsum_pT_allJet" : r"$p_{T}^{all\,j}$",
-    "nJets" : r"$n_{jets}$",
-    "Jet1_E" : r"$E_{\,j_{1}}$",
+    "nJets" : r"$\rm N_{\rm jets}$",
+    "Jet1_E" : r"$\rm E^{j_{1}}$",
     "DeepMET_reso_X" : r"$p_{x}^{\rm miss, DReso}$",
     "DeepMET_reso_Y" : r"$p_{y}^{\rm miss, DReso}$",
     "DeepMET_resp_X" : r"$p_{x}^{\rm miss, DResp}$",
